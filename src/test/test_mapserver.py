@@ -68,7 +68,7 @@ class TestMapserver(unittest.TestCase):
         """
         2. Request current (no time) PNG via WMS
         """
-        ref_hash = '148c715805765dcbd163ea35ee38f7b0'
+        ref_hash = '0e7b649748f0afd9b78fc3aa02fa2b95'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request current (no TIME) PNG via WMS')
@@ -92,7 +92,7 @@ class TestMapserver(unittest.TestCase):
         """
         4. Request current (time=default) PNG tile via WMS
         """
-        ref_hash = '148c715805765dcbd163ea35ee38f7b0'
+        ref_hash = '0e7b649748f0afd9b78fc3aa02fa2b95'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print('\nTesting: Request current (time=default) PNG tile via WMS')
@@ -104,7 +104,7 @@ class TestMapserver(unittest.TestCase):
         """
         5. Request tile with date from "year" layer via WMS
         """
-        ref_hash = '31692be7d450e2f585590674550424b8'
+        ref_hash = '02a8c63f01acf646ab8b982f590801a2'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22'
         if DEBUG:
             print('\nTesting: Request tile with date from "year" layer via WMS')
@@ -116,7 +116,7 @@ class TestMapserver(unittest.TestCase):
         """
         6. Request tile with date using a date range via WMS
         """
-        ref_hash = '31692be7d450e2f585590674550424b8'
+        ref_hash = '02a8c63f01acf646ab8b982f590801a2'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25'
         if DEBUG:
             print('\nTesting: Request tile with using a date range via WMS')
@@ -128,7 +128,7 @@ class TestMapserver(unittest.TestCase):
         """
         7. Request tile with date using a date range including an interval via WMS
         """
-        ref_hash = '31692be7d450e2f585590674550424b8'
+        ref_hash = '02a8c63f01acf646ab8b982f590801a2'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25/P1D'
         if DEBUG:
             print('\nTesting: Request tile with using a date range via WMS')
@@ -140,7 +140,7 @@ class TestMapserver(unittest.TestCase):
         """
         8. Request tile with date using a URL-encoded date range via WMS
         """
-        ref_hash = '31692be7d450e2f585590674550424b8'
+        ref_hash = '02a8c63f01acf646ab8b982f590801a2'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22T00%3A00%3A00Z%2F2012-02-25T00%3A00%3A00Z'
         if DEBUG:
             print('\nTesting: Request tile with using a URL-encded date range via WMS')
@@ -276,7 +276,7 @@ class TestMapserver(unittest.TestCase):
         """
         15. Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS
         """
-        ref_hash = '9d78ea88a09b4be0e61bea51a43dca68'
+        ref_hash = '3496e2b5186841e619b507951d067616'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg,test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Etest_legacy_subdaily_jpg%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
@@ -288,7 +288,7 @@ class TestMapserver(unittest.TestCase):
         """
         16. Request tile with date and time (sub-daily) and milliseconds. The milliseconds should be ignored
         """
-        ref_hash = 'c412c1cdf3df9c68ef9ad4045405f0b9'
+        ref_hash = 'c31d4c82d5fc150339417a2a3f517b9d'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00.000Z'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and milliseconds via WMS')
@@ -300,7 +300,7 @@ class TestMapserver(unittest.TestCase):
         """
         17. Request tile with multi-day period and snap to available date via WMS
         """
-        ref_hash = 'd0a3e8c29263e09575ba9473b2360da1'
+        ref_hash = 'ff53e39a5bd66b716046cb6301f9c5e1'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-01-15'
         if DEBUG:
             print('\nTesting: Request tile with multi-day period and snap to available date via WMS')
@@ -312,7 +312,7 @@ class TestMapserver(unittest.TestCase):
         """
         18. Request multiple layers with multi-day period and snap to available date via WMS
         """
-        ref_hash = 'c7c125a4cb3bb948f2c8f000e8ab6eb6'
+        ref_hash = '6e64a651398ddece438dd60ecbf6f2ac'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-12-15&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Esnap_test_3b%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request  multiple layers with multi-day period and snap to available date via WMS')
@@ -336,7 +336,7 @@ class TestMapserver(unittest.TestCase):
         """
         20. Request multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS
         """
-        ref_hash = 'b3173ab26942ec98da867be8ed5bd098'
+        ref_hash = 'c8961a3196c67c88d926a822c22de038'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02'
         if DEBUG:
             print('\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS')
@@ -361,7 +361,7 @@ class TestMapserver(unittest.TestCase):
         """
         22. Request layer with date and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
-        ref_hash = 'bea72af03789933b7d7f5405522d58fc'
+        ref_hash = '2864009b4c3219f84fbb31f80b5027cb'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&time=2012-02-22'
         if DEBUG:
             print('\nTesting: Request layer with date and reproject from EPSG:4326 to EPSG:3857')
@@ -373,7 +373,7 @@ class TestMapserver(unittest.TestCase):
         """
         23. Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
-        ref_hash = '2379ec819b6dc11e599a750ccc173ac0'
+        ref_hash = 'b1f72423421f6a7c278a26a998b633df'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3a,snap_test_3b&CRS=EPSG:3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&TIME=2015-01-01&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Esnap_test_3a%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3CNamedLayer%3E%3CName%3Esnap_test_3b%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS')
@@ -385,7 +385,7 @@ class TestMapserver(unittest.TestCase):
         """
         24. Request tile with time (sub-daily) and snap to available date time via WMS
         """
-        ref_hash = 'c412c1cdf3df9c68ef9ad4045405f0b9'
+        ref_hash = 'c31d4c82d5fc150339417a2a3f517b9d'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
@@ -410,7 +410,7 @@ class TestMapserver(unittest.TestCase):
         """
         25. Request image from vector source file with time via WMS
         """
-        ref_hash = '0509ad6e1dd0aafcf59daba3c60104c9'
+        ref_hash = 'ae9d551739704045a72cfc2daa2a519e'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Terra_Orbit_Dsc_Dots&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request image from vector source file with time via WMS')
@@ -577,7 +577,7 @@ class TestMapserver(unittest.TestCase):
         """
         34. Request multiple layers in one request with no time
         """
-        ref_hash = '702072b6f43312f4d4643c19c4b127de'
+        ref_hash = 'ac98e071fba9837e15fedced44a60374'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Esnap_test_3b%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request multiple layers in one request with no time via WMS')
@@ -589,7 +589,7 @@ class TestMapserver(unittest.TestCase):
         """
         35. Test GetLegendGraphic request
         """
-        ref_hash = '13b34c39c2fda83972a2df4cc2b5c394'
+        ref_hash = '8061189f2f7ec0d9255a6370c20d056a'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=getlegendGRAPHIC&layer=Terra_Orbit_Dsc_Dots&FORMAT=image/png&SLD_VERSION=1.1.0'
         if DEBUG:
             print('\nTesting: Request WMS GetLegendGraphic')
@@ -602,7 +602,7 @@ class TestMapserver(unittest.TestCase):
         36. Test requesting an OrbitTracks group layer to verify that both its underlying
             "Points" layer and "Lines" layer are included.
         """
-        ref_hash = 'c396fab5caf1f6879e737bbca3b48b3f'
+        ref_hash = 'd98016b8f38b0b02414e67292b7a660d'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=OrbitTracks_Aqua_Descending&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
         if DEBUG:
             print('\nTesting: Request group layer')
@@ -640,7 +640,7 @@ class TestMapserver(unittest.TestCase):
         """
         39. Tests requesting a legend using a GetLegendGraphic request that includes "wms.cgi".
         """
-        ref_hash = '3ae936d500bbf86b94281833e07a2d41'
+        ref_hash = '7f3b48cb3fd107712b2d0cd4512a2ec5'
         req_url = 'http://localhost/wms/test/wms.cgi?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=OrbitTracks_Aqua_Descending&format=image/png&STYLE=default'
         if DEBUG:
             print('\nTesting: Perform GetLegendGraphic request using a URL including \"wms.cgi\"')
@@ -653,7 +653,7 @@ class TestMapserver(unittest.TestCase):
         40. Tests requesting a legend using a GetLegendGraphic request that omits "wms.cgi".
             The URL should be rewritten by a mod_rewrite rule via oe2_wms.conf to include "wms.cgi".
         """
-        ref_hash = '3ae936d500bbf86b94281833e07a2d41'
+        ref_hash = '7f3b48cb3fd107712b2d0cd4512a2ec5'
         req_url = 'http://localhost/wms/test/?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=OrbitTracks_Aqua_Descending&format=image/png&STYLE=default'
         if DEBUG:
             print('\nTesting: Perform GetLegendGraphic request using a URL that lacks \"wms.cgi\"')
@@ -707,7 +707,7 @@ class TestMapserver(unittest.TestCase):
         """
         43. Test requesting a ZenJPEG layer PNG
         """
-        ref_hash = '154efc5e23fc1177c054e99bc9aa026f'
+        ref_hash = '79c39dfdf372654bfb07426e3fa0772c'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
             print('\nTesting: Request ZenJPEG-sourced PNG layer as a PNG via WMS')
@@ -719,7 +719,7 @@ class TestMapserver(unittest.TestCase):
         """
         44. Test requesting a ZenJPEG layer and another layer as a PNG
         """
-        ref_hash = '9662f74bf44df726abe0509ec52eabbd'
+        ref_hash = 'cc159338518168b4e817d3bde1692bc3'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=false&LAYERS=test_static_jpg,test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=2048&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
             print('\nTesting: Request ZenJPEG PNG layer and an underlying layer via WMS')
