@@ -3890,6 +3890,307 @@ class TestDateService(unittest.TestCase):
             found, expected,
             'Incorrect maxy attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
             .format(expected, found, url))
+        
+    def test_gc_layer_filtering_single_layer(self):
+        # Check that layer filtering returns only the requested layer
+
+        apache_config = self.set_up_gc_service('test_gc_layer_filtering_single',
+                                            'EPSG:4326')
+
+        layer1 = TEST_LAYERS['test_1']
+        layer1_config_path = self.write_config_for_test_layer(layer1)
+
+        # Download GC file with layer filter
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities&layer={}'.format(layer1['layer_id'])
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer1_config_path)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading GetCapabilities file from url: {}.'.format(url))
+
+        # Parse the XML and verify the root element and its namespaces are correct
+        try:
+            gc_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        # Get and test XML for layers
+        contents_elem = gc_dom.find('{*}Contents')
+        layer_elems = contents_elem.findall('{*}Layer')
+        self.assertEqual(
+            len(layer_elems), 1,
+            'Expected exactly 1 layer, found {}. Url: {}'.format(len(layer_elems), url))
+
+        # Verify it's the correct layer
+        identifier_elems = layer_elems[0].findall(
+            '{http://www.opengis.net/ows/1.1}Identifier')
+        self.assertNotEqual(
+            len(identifier_elems), 0,
+            '<Identifier> not found in generated GC file. Url: {}'.format(url))
+        self.assertEqual(
+            len(identifier_elems), 1,
+            'Incorrect number of <Identifier> elements found -- should only be 1. Url: {}'
+            .format(url))
+        expected = layer1['layer_id']
+        found = identifier_elems[0].text
+        self.assertEqual(
+            expected, found,
+            'Incorrect value for <Identifier>, expected {}, found {}. Url: {}'.
+            format(expected, found, url))
+
+
+    def test_gc_layer_filtering_multiple_layers(self):
+        # Check that layer filtering returns multiple requested layers
+
+        apache_config = self.set_up_gc_service('test_gc_layer_filtering_multiple',
+                                            'EPSG:4326')
+
+        # Create and write multiple layer configs
+        layer1 = TEST_LAYERS['test_1']
+        layer1_config_path = self.write_config_for_test_layer(layer1)
+        
+        layer2 = TEST_LAYERS['test_2']
+        layer2_config_path = self.write_config_for_test_layer(layer2)
+
+        # Download GC file with multiple layer filter
+        requested_layers = '{},{}'.format(layer1['layer_id'], layer2['layer_id'])
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities&layer={}'.format(requested_layers)
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer1_config_path)
+            os.remove(layer2_config_path)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading GetCapabilities file from url: {}.'.format(url))
+
+        # Parse the XML and verify the root element and its namespaces are correct
+        try:
+            gc_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        # Get and test XML for layers
+        contents_elem = gc_dom.find('{*}Contents')
+        layer_elems = contents_elem.findall('{*}Layer')
+        self.assertEqual(
+            len(layer_elems), 2,
+            'Expected exactly 2 layers, found {}. Url: {}'.format(len(layer_elems), url))
+
+        # Verify correct layers are returned
+        returned_layer_ids = []
+        for layer_elem in layer_elems:
+            identifier_elems = layer_elem.findall(
+                '{http://www.opengis.net/ows/1.1}Identifier')
+            self.assertNotEqual(
+                len(identifier_elems), 0,
+                '<Identifier> not found in generated GC file. Url: {}'.format(url))
+            self.assertEqual(
+                len(identifier_elems), 1,
+                'Incorrect number of <Identifier> elements found -- should only be 1. Url: {}'
+                .format(url))
+            returned_layer_ids.append(identifier_elems[0].text)
+
+        expected_layer_ids = [layer1['layer_id'], layer2['layer_id']]
+        self.assertEqual(
+            sorted(returned_layer_ids), sorted(expected_layer_ids),
+            'Expected layers {}, found {}. Url: {}'.format(expected_layer_ids, returned_layer_ids, url))
+
+
+    def test_gc_layer_filtering_empty_layer_param(self):
+        # Check that empty layer parameter returns proper error
+
+        apache_config = self.set_up_gc_service('test_gc_layer_filtering_empty',
+                                            'EPSG:4326')
+
+        # Create a layer config
+        layer = TEST_LAYERS['test_1']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        # Download GC file with empty layer parameter
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities&layer='
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer_config_path)
+
+        # Check that the response contains the expected error message
+        # Rather than checking status code, verify the XML content
+
+        # Parse the XML and verify error message
+        try:
+            response_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        message_elems = response_dom.findall('{*}Message')
+        self.assertNotEqual(
+            len(message_elems), 0,
+            '<Message> not found in error response. Url: {}'.format(url))
+        self.assertEqual(
+            len(message_elems), 1,
+            'Incorrect number of <Message> elements found -- should only be 1. Url: {}'
+            .format(url))
+        
+        # TODO once we resolve https://bugs.earthdata.nasa.gov/projects/GITC/issues/GITC-7806 we should 
+        # be checking the error code status not the message 
+        expected_message = 'You must request a layer if you specify the layer query parameter'
+        found_message = message_elems[0].text
+        self.assertIn(
+            expected_message, found_message,
+            'Expected error message containing "{}", found "{}". Url: {}'.format(
+                expected_message, found_message, url))
+
+
+    def test_gc_layer_filtering_nonexistent_layer(self):
+        # Check that requesting nonexistent layer returns proper error
+
+        apache_config = self.set_up_gc_service('test_gc_layer_filtering_nonexistent',
+                                            'EPSG:4326')
+
+        # Create a layer config
+        layer = TEST_LAYERS['test_1']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        # Download GC file with nonexistent layer
+        nonexistent_layer = 'NonExistent_Layer_ID'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities&layer={}'.format(nonexistent_layer)
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer_config_path)
+
+        # Check that the response contains the expected error message
+        # Rather than checking status code, verify the XML content
+
+        # Parse the XML and verify error message
+        try:
+            response_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        message_elems = response_dom.findall('{*}Message')
+        self.assertNotEqual(
+            len(message_elems), 0,
+            '<Message> not found in error response. Url: {}'.format(url))
+        self.assertEqual(
+            len(message_elems), 1,
+            'Incorrect number of <Message> elements found -- should only be 1. Url: {}'
+            .format(url))
+        
+        # TODO once we resolve https://bugs.earthdata.nasa.gov/projects/GITC/issues/GITC-7806 we should 
+        # be checking the error code status not the message 
+        expected_message = 'Requested layer not found: {}'.format(nonexistent_layer)
+        found_message = message_elems[0].text
+        self.assertIn(
+            expected_message, found_message,
+            'Expected error message containing "{}", found "{}". Url: {}'.format(
+                expected_message, found_message, url))
+
+
+    def test_gc_layer_filtering_mixed_valid_invalid(self):
+        # Check that requesting mix of valid and invalid layers returns proper error
+
+        apache_config = self.set_up_gc_service('test_gc_layer_filtering_mixed',
+                                            'EPSG:4326')
+
+        # Create a layer config
+        layer = TEST_LAYERS['test_1']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        # Download GC file with mix of valid and invalid layers
+        nonexistent_layer = 'NonExistent_Layer_ID'
+        mixed_layers = '{},{}'.format(layer['layer_id'], nonexistent_layer)
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities&layer={}'.format(mixed_layers)
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer_config_path)
+
+        # Check that the response contains the expected error message
+        # Rather than checking status code, verify the XML content
+
+        # Parse the XML and verify error message
+        try:
+            response_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        message_elems = response_dom.findall('{*}Message')
+        self.assertNotEqual(
+            len(message_elems), 0,
+            '<Message> not found in error response. Url: {}'.format(url))
+        self.assertEqual(
+            len(message_elems), 1,
+            'Incorrect number of <Message> elements found -- should only be 1. Url: {}'
+            .format(url))
+        
+        # TODO once we resolve https://bugs.earthdata.nasa.gov/projects/GITC/issues/GITC-7806 we should 
+        # be checking the error code status not the message 
+        expected_message = 'Requested layer not found: {}'.format(nonexistent_layer)
+        found_message = message_elems[0].text
+        self.assertIn(
+            expected_message, found_message,
+            'Expected error message containing "{}", found "{}". Url: {}'.format(
+                expected_message, found_message, url))
+
+    def test_gc_duplicate_layer_names(self):
+        # Check that requesting the same layer name twice returns proper error
+        
+        apache_config = self.set_up_gc_service('test_gc_duplicate_layer_names',
+                                               'EPSG:4326')
+
+        # Create a layer config
+        layer = TEST_LAYERS['test_1']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        # Download GC file with duplicate layer names
+        duplicate_layers = '{},{}'.format(layer['layer_id'], layer['layer_id'])
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities&layer={}'.format(duplicate_layers)
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer_config_path)
+
+        # Parse the XML and verify error message
+        try:
+            response_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        message_elems = response_dom.findall('{*}Message')
+        self.assertNotEqual(
+            len(message_elems), 0,
+            '<Message> not found in error response. Url: {}'.format(url))
+        self.assertEqual(
+            len(message_elems), 1,
+            'Incorrect number of <Message> elements found -- should only be 1. Url: {}'
+            .format(url))
+        
+        # TODO once we resolve https://bugs.earthdata.nasa.gov/projects/GITC/issues/GITC-7806 we should 
+        # be checking the error code status not the message 
+        expected_message = 'Duplicate layer names {}'.format(layer['layer_id'])
+        found_message = message_elems[0].text
+        self.assertIn(
+            expected_message, found_message,
+            'Expected error message containing "{}", found "{}". Url: {}'.format(
+                expected_message, found_message, url))
 
     @classmethod
     def tearDownClass(self):

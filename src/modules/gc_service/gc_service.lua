@@ -943,7 +943,15 @@ local function makeGC(endpointConfig, query_string)
         end
 
         local requestedLayerIds = {}
+        local seenIds = {}
         for id in string.gmatch(requestedLayersStr, "([^,]+)") do
+            id = string.match(id, "^%s*(.-)%s*$")
+            
+            if seenIds[id] then
+                return formatXMLResponse(400, "Duplicate layer names " .. id)
+            end
+            
+            seenIds[id] = true
             table.insert(requestedLayerIds, id)
         end
 
