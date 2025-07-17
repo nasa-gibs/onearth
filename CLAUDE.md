@@ -20,10 +20,13 @@ OnEarth is built on the **AHTSE (Apache HTTPD Tile Server Ecosystem)** framework
 ### Key Components
 
 **Apache Modules (src/modules/):**
-- `mod_mrf`: Primary tile server serving from MRF (Meta Raster Format) files with sub-millisecond response times
+- `mod_mrf`: Primary tile server serving from MRF (Meta Raster Format) files with high-performance tile delivery
 - `mod_wmts_wrapper`: Converts WMTS requests to REST format, handles time dimensions
 - `mod_reproject`: Handles projection changes and tile grid transformations
 - `mod_twms`: Converts Tiled WMS requests to AHTSE REST format
+- `mod_ahtse_png`: Real-time PNG chunk manipulation for dynamic colormap application and transparency support
+- `mod_sfim`: Static file serving based on URL pattern matching for protocol handshake files
+- `mod_ahtse_lua`: Lua script execution engine enabling dynamic content generation for services
 - Additional transformation modules: mod_convert, mod_retile, mod_receive, mod_brunsli
 
 **Services:**
