@@ -61,19 +61,24 @@ local function join(arr, sep)
     return outStr
 end
 
-local function get_query_param (param, query_string)
+-- The optional tag is so that we return an empty string if the user specified 
+-- the query parameter but didnt give it a value. This is allowed if the query parameter is optional
+local function get_query_param(param, query_string, optional)
     if not query_string then
         return nil
     end
     local query_parts = split("&", query_string)
-    local date_string = nil;
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
         if string.lower(query_pair[1]) == param then
-            return query_pair[2]
+            if optional then 
+                return query_pair[2] or ""
+            else
+                return query_pair[2]
+            end
         end
     end
-    return date_string
+    return nil
 end
     
 local function sendResponse(code, msg_string)
@@ -83,6 +88,27 @@ local function sendResponse(code, msg_string)
     },
     code
 end
+
+local function formatXMLResponse(code, msg_string)
+    local dom = xml.new("Response", {
+        ["xmlns:ows"] = "http://www.opengis.net/ows/1.1",
+        ["xmlns:xsi"] =  "http://www.w3.org/2001/XMLSchema-instance",
+        ["version"] = "1.1.0",
+        ["xml:lang"] = "en"
+    })
+    
+    local messageNode = xml.elem("Message", {
+        ["code"] = tostring(code),
+        msg_string
+    })
+    dom:add_direct_child(messageNode)
+    
+    return tostring(dom),
+    {
+        ["Content-Type"] = "text/xml; charset=UTF-8"
+    },
+    code
+end 
 
 local function getExtensionFromMimeType(mimeType)
     if mimeType == "image/jpeg" then
@@ -525,7 +551,7 @@ local function makeGTS(endpointConfig)
 
     local layers = getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     if not layers then
-        return sendResponse(400, "No layers found!")
+        return formatXMLResponse(400, "No layers found!")
     end
 
     for _, tiledGroup in ipairs(layers) do
@@ -854,8 +880,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     return nodeList
 end
 
-
-local function makeGC(endpointConfig)
+local function makeGC(endpointConfig, query_string)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
@@ -893,10 +918,63 @@ local function makeGC(endpointConfig)
 
     -- Build contents section
     local contentsElem = xml.elem("Contents")
-    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
+
+    -- This variable will hold the final list of layers for the response.
+    local layers
+    
+    -- Get all possible layers from the configuration
+    local allAvailableLayers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
+
+    local requestedLayersStr = get_query_param("layer", query_string, true)
+    if requestedLayersStr == "" then 
+        return formatXMLResponse(400, "You must request a layer if you specify the layer query parameter")
+    end 
+    if requestedLayersStr and requestedLayersStr ~= "" then
+        -- If specific layers are requested, filter the list.
+        local availableLayersMap = {}
+        if allAvailableLayers then
+            for _, layerNode in ipairs(allAvailableLayers) do
+                -- 'Identifier' is the tag holding the layer name that should match what the user requested
+                local layerIdenitifierNode = layerNode:get_elements_with_name("ows:Identifier")[1]
+                if layerIdenitifierNode then
+                    availableLayersMap[layerIdenitifierNode:get_text()] = layerNode
+                end
+            end
+        end
+
+        local requestedLayerIds = {}
+        local seenIds = {}
+        for id in string.gmatch(requestedLayersStr, "([^,]+)") do
+            id = string.match(id, "^%s*(.-)%s*$")
+            
+            if seenIds[id] then
+                return formatXMLResponse(400, "Duplicate layer names " .. id)
+            end
+            
+            seenIds[id] = true
+            table.insert(requestedLayerIds, id)
+        end
+
+        if #requestedLayerIds == 0 then
+            -- If no layers could be parsed, this is an invalid request.
+            return formatXMLResponse(400, "Invalid LAYER parameter: could not parse any layer names")
+        end
+        
+        layers = {} -- Initialize list of layers for the response.
+        for _, requestedId in ipairs(requestedLayerIds) do
+            if not availableLayersMap[requestedId] then
+                -- A requested layer does not exist in the available set, so return an error
+                return formatXMLResponse(400, "Requested layer not found: " .. requestedId)
+            end
+            table.insert(layers, availableLayersMap[requestedId])
+        end
+    else
+        -- If no specific layers are requested, return all available layers.
+        layers = allAvailableLayers
+    end
 
     if not layers then
-        return sendResponse(400, "No layers found!")
+        return formatXMLResponse(400, "No layers found!")
     end
    
     for _, layer in ipairs(layers) do
@@ -978,7 +1056,7 @@ local function makeTWMSGC(endpointConfig)
     local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, true)
     
     if not layers then
-        return sendResponse(400, "No layers found!")
+        return formatXMLResponse(400, "No layers found!")
     end
     
     for _, layer in ipairs(layers) do
@@ -1097,12 +1175,12 @@ function onearth_gc_service.handler(endpointConfig)
     return function(query_string, _, _)
         local req = get_query_param("request", query_string)
         if not req then
-            return sendResponse(200, 'No REQUEST parameter specified')
+            return formatXMLResponse(200, 'No REQUEST parameter specified')
         end
         req = req:lower()
         local response
         if req == "wmtsgetcapabilities" then
-            response = makeGC(endpointConfig)
+            response = makeGC(endpointConfig, query_string)
         elseif req == "twmsgetcapabilities" then
             response = makeTWMSGC(endpointConfig)
         elseif req == "gettileservice" then

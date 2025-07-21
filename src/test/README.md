@@ -37,6 +37,14 @@ Example:
 ./ci/run_test_in_docker.sh nasagibs/onearth-test:latest test_mod_mrf.py
 ```
 
+The output will say 
+```
+Ran x tests in xs
+
+OK
+```
+If the tests were all successful 
+
 Refer [here](../../ci/README.md) for information on building the docker image used for testing.
 
 ## Setup
