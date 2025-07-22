@@ -1,177 +1,177 @@
 {
     "AIRS_All_Sky_Outgoing_Longwave_Radiation": {
         "colormap": "AIRS_All_Sky_Outgoing_Longwave_Radiation.xml",
-        "png_h": "3d4f0a4d49ca985475e519a485871151",
-        "png_v": "f5c59fe74a7abfb573c9b8d40bac62cb",
-        "svg_h": "b40968f3363a625e38276af93e5ed018",
-        "svg_v": "a41dd190d1819eef89a1b79f6c3cb706"
+        "png_h": "adcf3056ab658f9e2e6cc1f8a84afec6",
+        "png_v": "eaa02687edc7d083fffad05ea22c7a14",
+        "svg_h": "5793d814257fc621b1036cb7753afc0a",
+        "svg_v": "f5e3d1d5fe54ee12b436c793765af3aa"
     },
     "AIRS_Dust_Score_Ocean_Day": {
         "colormap": "AIRS_Dust_Score_Ocean_Day.xml",
-        "png_h": "11a6c7eb3cfd60528efff0695fde5282",
-        "png_v": "86ed782291efeea2230e89004ee3f476",
-        "svg_h": "a68e09d751483b2756f906336a6caf64",
-        "svg_v": "c0ff47c24892ca47db682741cfc23027"
+        "png_h": "038cfdce5557a09134990305975d5f15",
+        "png_v": "342060fb3ff99475045773ce1b352b46",
+        "svg_h": "6a10023d3ab8460e23fdcceb044f9d9a",
+        "svg_v": "2c8796bab8641b56029dd3ab9d8c69c1"
     },
     "AIRS_Prata_SO2_Index_Day": {
         "colormap": "AIRS_Prata_SO2_Index_Day.xml",
-        "png_h": "054c2e912632222187419924d07d993a",
-        "png_v": "f132b768cf6c8a33d96e557b831f968f",
-        "svg_h": "c0011c99435fce186a058a5ff13d40c0",
-        "svg_v": "28f3ca55ebe62fc39a368e8fc1afd354"
+        "png_h": "94f04636509f6824667f985934eabc89",
+        "png_v": "a60da5d57ed3c9ce0778008710265db0",
+        "svg_h": "47c0e1f16be5917902a8abae46b53cd6",
+        "svg_v": "c4097fe2b36ec1a1ccc582262a6bebe3"
     },
     "AMSR2_Cloud_Liquid_Water_Day": {
         "colormap": "AMSR2_Cloud_Liquid_Water_Day.xml",
-        "png_h": "5acacf3a1235a75a5d065e7ebb26577c",
-        "png_v": "090ded648b74b938db979d75c0b02482",
-        "svg_h": "ffa36924fd5bc6a9db49f45a12a07775",
-        "svg_v": "08164339b9b0cd917aedcd6a4c06a338"
+        "png_h": "ed6a8c0ebc2e7a00b3a7070c9c8aa2eb",
+        "png_v": "504847ce2c3d022749a5ee731f16a4af",
+        "svg_h": "99f13eb4e8b664d40919b4c9a3d00cf8",
+        "svg_v": "709784f16aaa2b589c1b3d510ed45c42"
     },
     "AMSR2_Sea_Ice_Concentration_25km": {
         "colormap": "AMSR2_Sea_Ice_Concentration_25km.xml",
-        "png_h": "54b152d70a7fff3e0027441c9c104199",
-        "png_v": "e249a6cc2b3082f5f18d860ec8e1ea97",
-        "svg_h": "f0856900b578af78a5442289555d30e0",
-        "svg_v": "f8a23dd3ed6d2a722736fa04543fed82"
+        "png_h": "0c9c6c4a6e692a1d749fc48a340df7d3",
+        "png_v": "322f2cc84fe29485edb8df896c0e7e91",
+        "svg_h": "d7fc1af9b5cf16beda0b8103652c7ee2",
+        "svg_v": "5b73444d0a3f67ab6a70f9ef82e65881"
     },
     "AMSRE_Snow_Depth_Over_Ice": {
         "colormap": "AMSRE_Snow_Depth_Over_Ice.xml",
-        "png_h": "dba5566553db9812ef101e08b8cc3a31",
-        "png_v": "442df2222480513ba614004fd49c2ff4",
-        "svg_h": "49171e2d035d71fc7cf9555ca89603ba",
-        "svg_v": "65343f43fd275437e62aae53ccfa72cc"
+        "png_h": "7b121fb34c6a392ac7fabc2b415eb57c",
+        "png_v": "a15e54c6644b2b7a9af4c21ebec388d2",
+        "svg_h": "5a4cda0e297a6226b1a632fcc7e3bf6f",
+        "svg_v": "59a5f5a7cb49d3dd9562a70f80a4a0b9"
     },
     "Anthropogenic_Biomes_of_the_World_2001-2006": {
         "colormap": "Anthropogenic_Biomes_of_the_World_2001-2006.xml",
-        "png_h": "9d46fbd08e9ac392956534233f24a393",
-        "png_v": "ccaf7e4d89f1478fbb79ee7851de451b",
-        "svg_h": "bd450e151d6d1f30fa246b0faed5ec85",
-        "svg_v": "8f14021b0c684d50e2da4cd8d0b28a1f"
+        "png_h": "e2768625651b8d851548accaf8bb1e99",
+        "png_v": "d7dac4632a07d8fd9898aa7b4575a4a7",
+        "svg_h": "2150ee979ec7d66d60c3d70ac9a90fc2",
+        "svg_v": "f2c1de3c90c14e6631d42ab3fcfc7984"
     },
     "CERES_EBAF_TOA_Incoming_Solar_Flux_Monthly": {
         "colormap": "CERES_EBAF_TOA_Incoming_Solar_Flux_Monthly.xml",
-        "png_h": "c3d8c436b58b73f3083b659705bfa6c1",
-        "png_v": "b4b5d8ad4affb79f8ffd4021d31bcd81",
-        "svg_h": "ef2256cf80fb9f9cd7e1cd6af34e0696",
-        "svg_v": "9ea012489d7822bcbc1c88886d28318e"
+        "png_h": "7ba8124248a238a51d528510c07cb8e5",
+        "png_v": "797b0da672e72423d2c955f0407f9d7b",
+        "svg_h": "455e239c42990246c7537cfed2d6709c",
+        "svg_v": "8692d47257c1851f30632919a812653c"
     },
     "LIS_High_Resolution_Full_Climatology_LIS_Scaled_Flashes": {
         "colormap": "LIS_High_Resolution_Full_Climatology_LIS_Scaled_Flashes.xml",
-        "png_h": "1b6d290e00e8c7c3a095f72ab3a8875f",
-        "png_v": "445e7b3772a36c555967ef1f6c904107",
-        "svg_h": "73bd4b6018435adfda0d773fa568c420",
-        "svg_v": "3882c37f98df40e6f009a7b7228e3dce"
+        "png_h": "e0d40ff0951ae350cfc959f234ef9173",
+        "png_v": "955745937137bc019f5354f31d350b17",
+        "svg_h": "d66c52d4352cf0ee35fc407275439a26",
+        "svg_v": "08b783236ad0889acc6d87300aa58b45"
     },
     "LIS_Very_High_Resolution_Lightning_Full_Climatology_LIS_Mean_Flash_Rate": {
         "colormap": "LIS_Very_High_Resolution_Lightning_Full_Climatology_LIS_Mean_Flash_Rate.xml",
-        "png_h": "1666b71260e44d4cafd255822f517f5e",
-        "png_v": "17a2eff3ae0c67ef254c54b935ff0f82",
-        "svg_h": "9d45edc7d65bb2b308c7c3057aa8b32d",
-        "svg_v": "07ab27b293d4d242f735aae5076b11dd"
+        "png_h": "58180dccbfaef167b4f8b9472a7ac6a8",
+        "png_v": "8dcca6efbce9f1bb71368b04b6bacd18",
+        "svg_h": "7469fae51e2b4235f01290df602af0a3",
+        "svg_v": "17341451da8b28a3084e753eedd1358f"
     },
     "MEaSUREs_Daily_Landscape_Freeze_Thaw_AMSRE.xml": {
         "colormap": "MEaSUREs_Daily_Landscape_Freeze_Thaw_AMSRE.xml",
-        "png_h": "26019ea35080a72d5598f2dd8b6a90c2",
-        "png_v": "a3176c7829b52cd0360f0b013806c5cf",
-        "svg_h": "8393bdbe7099bd5307259a294bec8af1",
-        "svg_v": "547b473ed1836305c055bf2e44fffc3d"
+        "png_h": "1a2bf3fcdef458dee3f7bcffa227c324",
+        "png_v": "fcf24b1a4c95c98a7d84802a53481fb4",
+        "svg_h": "9001862022db3b0a7dbc76f52ed75bc7",
+        "svg_v": "8756b4306c656c63ae19278ce7236b38"
     },
     "MODIS_Aqua_Cloud_Effective_Radius_PCL": {
         "colormap": "MODIS_Aqua_Cloud_Effective_Radius_PCL.xml",
-        "png_h": "4db5c9546dfb96a8407ff128fb99ee9c",
-        "png_v": "27cf344a037bc099704b972a184a038d",
-        "svg_h": "4aaa83f7e1ef4294ed2d9f527296be83",
-        "svg_v": "9da7d1eeb525cfa42fd6981ed9136c67"
+        "png_h": "8e890fa9b501d977070b2fbdf2fe56a7",
+        "png_v": "ff0e6401376d57aee518b52c12921f18",
+        "svg_h": "8ddb7c64b88b71dd201b9893a2813605",
+        "svg_v": "e8f7aadcb10eec077976fc4933ebd27c"
     },
     "MODIS_Aqua_Cloud_Phase_Infrared_Day": {
         "colormap": "MODIS_Aqua_Cloud_Phase_Infrared_Day.xml",
-        "png_h": "bfcf932da823a08be94e47b05a104569",
-        "png_v": "579de01dd03c366b140b17adbdaa853a",
-        "svg_h": "9c0b6cc8ec8a47b1dcf1830ec69559cf",
-        "svg_v": "fea68a905c5d2e42ca449852f9d970b0"
+        "png_h": "7607f916cfc4116d4d041ff17166af6e",
+        "png_v": "527a4621e0c6983d536350f49836d456",
+        "svg_h": "93b56f62b249388f4ac694143dd7246f",
+        "svg_v": "f2e3ecbc9937b1ea7eb4e8a13ce07f33"
     },
     "MODIS_Aqua_Cloud_Water_Path": {
         "colormap": "MODIS_Aqua_Cloud_Water_Path.xml",
-        "png_h": "f439f52b4ffbb990317d442ee7ade8b8",
-        "png_v": "9191c51d91f27091fce179e5d2495fc4",
-        "svg_h": "a885b8ba69cb75fde9b47a3b238233ba",
-        "svg_v": "95f9a4eee5b33b64c853ab123165faa6"
+        "png_h": "998f2f86db33160fea38f0212d9d01eb",
+        "png_v": "1501f3b9d5911f47fb8debb5e675de15",
+        "svg_h": "6e61317e3575cb211a38be92a8a19106",
+        "svg_v": "be755a7cee1f7e899d242b0dd72045eb"
     },
     "MODIS_Aqua_Data_No_Data": {
         "colormap": "MODIS_Aqua_Data_No_Data.xml",
-        "png_h": "3477bd8a0c0e45fb8325cbbcfab32787",
-        "png_v": "5526bd9788ef7d8c277cb58971ad9639",
-        "svg_h": "90e000d4cf4b85b694f57ee24ce06795",
-        "svg_v": "b75d12898b73fa56bd39157d079f88c0"
+        "png_h": "2606f0ea9a3e6edf089f5d420cceb8a7",
+        "png_v": "a845de2c405eec29a5ba14f5adf119fb",
+        "svg_h": "103c74d12dd7dcee69e6bd119a358bbc",
+        "svg_v": "2c63641a7624bcdc1fad476ee3870eff"
     },
     "MODIS_Aqua_Sea_Ice": {
         "colormap": "MODIS_Aqua_Sea_Ice.xml",
-        "png_h": "502e2c10d2511f5e68b84ad62a0628e3",
-        "png_v": "ee0cc3a0003396711941c5b384085c6a",
-        "svg_h": "6d0218e103518d81efbd0f7320baf28d",
-        "svg_v": "f7a21a9769cd97d0036970eecf5d1bbb"
+        "png_h": "1d7d83156c94573f62c9cfb9a9bd0d52",
+        "png_v": "a8a814f63a695e7b0cbb01cc58697fdc",
+        "svg_h": "168391d4271d6ae49ddd7278360feca4",
+        "svg_v": "bf3e9716b02ae60def0e0dc7f89f1dce"
     },
     "MODIS_Combined_Value_Added_AOD.xml": {
         "colormap": "MODIS_Combined_Value_Added_AOD.xml",
-        "png_h": "f8b6ee50c87cafe00457ff8da4426212",
-        "png_v": "a3cd13d325fa5dd292a41cee0766e2cc",
-        "svg_h": "cea68625a405047425c9eb6b1706f719",
-        "svg_v": "87355293a0e710ffd10c21178ee7ee41"
+        "png_h": "362a8fc420ac7b703601c86488809ce9",
+        "png_v": "0c908f88d11ae180756cec08dbd51549",
+        "svg_h": "ab3f846834288a5902f7ccb4cec35c08",
+        "svg_v": "c825cf8251fea8dee35cfa2b179b7550"
     },
     "MODIS_Water_Mask": {
         "colormap": "MODIS_Water_Mask.xml",
-        "png_h": "5838a18be34dceeca193dcc3c590406c",
-        "png_v": "ea832b7f4ff27330d0d94265ebc49995",
-        "svg_h": "c07a3a650cc0c6e7d22f8d89256eb61c",
-        "svg_v": "d5835601afe20b8894452be671116e8f"
+        "png_h": "12e57177e8b811ec67bad98aa71b5997",
+        "png_v": "c8290f21e31e0b1d977715d87e5d4aa7",
+        "svg_h": "825009cb4e6f5d53c19ebbf982c41230",
+        "svg_v": "2cb9710aed2e6ec2b532541f2669bf01"
     },
     "MOPITT_CO_Daily_Surface_Mixing_Ratio_Day": {
         "colormap": "MOPITT_CO_Daily_Surface_Mixing_Ratio_Day.xml",
-        "png_h": "a235d9757763e0b0d84ffa3852b31b29",
-        "png_v": "1b66850a4cd16d3541d41029b1c05f42",
-        "svg_h": "20c65d44e2b866cf5e963b8c430c958d",
-        "svg_v": "89d144b9aba9143912e19eb7ceedf8e4"
+        "png_h": "124d350b417fb453cfb727f140418951",
+        "png_v": "24f63361c8d150278904e2cb51afe80d",
+        "svg_h": "b032ec409da2399eb6e657166db73cb7",
+        "svg_v": "6199115961331e778c0bc68c5c0a0ca9"
     },
     "OMPS_Aerosol_Index_PyroCumuloNimbus": {
         "colormap": "OMPS_Aerosol_Index_PyroCumuloNimbus.xml",
-        "png_h": "9088c2f74e9dc0921bdff5c777d9798a",
-        "png_v": "0483b0a4f5e5d9e4bfa99c65ad6c49bd",
-        "svg_h": "62338765258ff1ddd0c30bededeb0c9c",
-        "svg_v": "589647cb78a5333b0eb5e259c07e3a87"
+        "png_h": "a2a22c9288f6596122b82d631db8ffda",
+        "png_v": "0ab6bfe4b0f5288120c5fb7de3a5e617",
+        "svg_h": "9c5e719f3bb60f3d8654d42a5f1f1fd9",
+        "svg_v": "291f2ada4ca8ab43657c9e5b64f27fb1"
     },
     "OTD_High_Resolution_Full_Climatology_OTD_Scaled_Flashes": {
         "colormap": "OTD_High_Resolution_Full_Climatology_OTD_Scaled_Flashes.xml",
-        "png_h": "c6b5ff7ca1dc2ad41d95cd1b4721d9a4",
-        "png_v": "ae6447ef097df66b5a6b50cf7c138dfb",
-        "svg_h": "783d70fbf06121bf5622d67aa380cbdc",
-        "svg_v": "2734f41891788730227205b9311f6737"
+        "png_h": "06653578e0ff705d01b6655fd95f7540",
+        "png_v": "016701037e081f63c1dab8c6c6f3c6b6",
+        "svg_h": "8ed3721738f69e24b8bf094b4465e4b5",
+        "svg_v": "1ab428275ce1426c8b6e4d4eceeb6132"
     },
     "SMAP_L1_Passive_Brightness_Temp_Fore_H_RFI": {
         "colormap": "SMAP_L1_Passive_Brightness_Temp_Fore_H_RFI.xml",
-        "png_h": "9724e97b201f22cdb3c3e73858d21208",
-        "png_v": "34d0898075f46740c86222e864532bc4",
-        "svg_h": "764e1e9e79494c8306b83b8af08e4126",
-        "svg_v": "c521828454a7b9ee79a29cceff5c6c33"
+        "png_h": "87562e6c21bf661051a01a63b35cb70b",
+        "png_v": "1fa988f2ff649d56b88443ab28283e3c",
+        "svg_h": "18ed34f7df00c87ca4b4efb98f31b78f",
+        "svg_v": "039ef337f3702909b9ec559e3e9d5bd1"
     },
     "SMAP_L4_Uncertainty_Mean_Net_Ecosystem_Exchange": {
         "colormap": "SMAP_L4_Uncertainty_Mean_Net_Ecosystem_Exchange.xml",
-        "png_h": "fdf0391b75e045fef5374c4baa8e3dc4",
-        "png_v": "e57b1354dbb16adecb6cd492b9ca32e8",
-        "svg_h": "7bb78d5b2cf11b4e6ef62283e418f4b0",
-        "svg_v": "889b8897241830e47fa844908ceb4177"
+        "png_h": "bed85782b82af94f827dee186da4b68c",
+        "png_v": "af33781bee4a2759da5c58ea7edeef6f",
+        "svg_h": "04605e8df4f83da2dd59ad16308eeb68",
+        "svg_v": "69bc3d636f0a3f9c850a8f3a7f949799"
     },
     "TOPEX-Poseidon_JASON_Sea_Surface_Currents_Meridional_US_West_Coast_GAFECC": {
         "colormap": "TOPEX-Poseidon_JASON_Sea_Surface_Currents_Meridional_US_West_Coast_GAFECC.xml",
-        "png_h": "1f8d4a3a542b277ecc8b62ce3abf9c13",
-        "png_v": "6a89e943be301ce46898a327c218c4a2",
-        "svg_h": "037c2a30cdaf791040f04cf90d4ecf4c",
-        "svg_v": "9b2a3565e263868edfca4258ac7708fd"
+        "png_h": "99101e43b83e1cd989ee9f55fb3367b0",
+        "png_v": "b93137c92fc299bd1a3af355072cd8a5",
+        "svg_h": "ef3d7eb53397c2b238ad1f72bf05b179",
+        "svg_v": "29e5fb25349823a26ec22a6cd694ec20"
     },
     "UHI_Urban-Rural_Summer_Night_Min_Land_Surface_Temp_Difference_2013": {
         "colormap": "UHI_Urban-Rural_Summer_Night_Min_Land_Surface_Temp_Difference_2013.xml",
-        "png_h": "fb1e1e9de09fd3e5438c953953d467ed",
-        "png_v": "2f19df0adb79e2d4d069164b855e70f2",
-        "svg_h": "d8d23cc3e3cc80c5b59b9d2765bdbb76",
-        "svg_v": "383668d565390db2a11eeb325cf2d2a4"
+        "png_h": "70dfaf0c57e2e0fe1f75175280802281",
+        "png_v": "50c41cb217dd69a43ae93f6a0d21b4cb",
+        "svg_h": "c1148e06cb34c32cbef5d73175876c25",
+        "svg_v": "124d5ab72a638a7d11f3fc66e3c8c455"
     }
 }
