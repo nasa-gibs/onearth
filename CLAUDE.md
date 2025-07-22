@@ -17,6 +17,8 @@ OnEarth is built on the **AHTSE (Apache HTTPD Tile Server Ecosystem)** framework
 - **onearth-reproject**: Projection transformation services  
 - **onearth-wms**: Traditional WMS services via MapServer
 - **onearth-demo**: Demo interface and examples
+- **onearth-tools**: Comprehensive utility container with data processing tools (mrfgen, vectorgen, colormaps, configuration generators)
+- **onearth-test**: Complete testing environment with Apache/Redis/MapServer stack, test suites, and comprehensive test data for end-to-end validation
 
 ### Key Components
 
@@ -34,6 +36,7 @@ OnEarth is built on the **AHTSE (Apache HTTPD Tile Server Ecosystem)** framework
 - **GetCapabilities Service (gc_service)**: Lua-based service generating WMTS/TWMS GetCapabilities XML from YAML configs
 - **Time Service**: Lua service for querying time periods and date snapping using Redis
 - **WMS Service**: MapServer integration for traditional WMS capabilities
+- **Tile service**: Primary tile service consisting of WMTS and TWMS
 
 **Data Tools:**
 - `mrfgen`: MRF file generation from various input formats
