@@ -38,15 +38,10 @@ RUN dnf -y update && \
 # Silence the parallel citation
 RUN echo 'will cite' | parallel --citation || true
 
-# Install yq
-WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.4/yq_linux_amd64.tar.gz -O - |\
-  tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
-
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz && \
-    tar xf go1.24.4.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.24.5.linux-amd64.tar.gz && \
+    tar xf go1.24.5.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.34.tar.gz && \
@@ -58,6 +53,10 @@ RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz && \
     sh build.sh && \
     mv dist/supercronic-linux-amd64 /usr/local/bin/ && \
     ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic
+
+# Install yq
+WORKDIR /tmp
+RUN go install github.com/mikefarah/yq/v4@master
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
