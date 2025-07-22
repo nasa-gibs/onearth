@@ -14,70 +14,84 @@
 
 """
 Compare files between two directories.
-For PNG and JPEG files, compare pixel differences and create difference images.
+For PNG and JPEG files, compare pixel differences and create difference images using Pillow.
 For CSV and SVG files, compare contents exactly.
 For other files, compare binary contents.
 """
 
 import os
-import subprocess
 import sys
 from pathlib import Path
 import re
-
-def run_command(cmd):
-    """Run a command and return output"""
-    try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        return result.returncode, result.stdout, result.stderr
-    except Exception as e:
-        return -1, "", str(e)
+from PIL import Image, ImageChops
 
 def get_file_type(path):
-    """Detect the actual file type using the 'file' command."""
+    """Detect the actual file type using the file extension."""
     if not os.path.exists(path):
         return None
-    result = run_command(f"file --mime-type -b {path}")
-    if result[0] == 0:
-        return result[1].strip()
-    return None
+    ext = os.path.splitext(path)[1].lower()
+    if ext == '.png':
+        return 'image/png'
+    elif ext in ('.jpg', '.jpeg'):
+        return 'image/jpeg'
+    elif ext in ('.tif', '.tiff'):
+        return 'image/tiff'
+    elif ext == '.csv':
+        return 'text/csv'
+    elif ext == '.svg':
+        return 'image/svg+xml'
+    elif ext in ('.txt', '.md', '.py', '.json', '.xml', '.yaml', '.yml'):
+        return 'text/' + ext[1:]
+    else:
+        return ''
 
 def compare_images(original_path, updated_path, diff_dir, ext):
-    """Compare two images using ImageMagick. ext should be 'png' or 'jpeg'."""
+    """Compare two images using Pillow. ext should be 'png', 'jpeg', or 'tiff'.
+    If image open fails, try text compare, then binary compare."""
     if not os.path.exists(original_path):
         return f"ORIGINAL file missing: {original_path}"
     if not os.path.exists(updated_path):
         return f"UPDATED file missing: {updated_path}"
-    # Get basic image info
-    original_info = run_command(f"identify {original_path}")
-    updated_info = run_command(f"identify {updated_path}")
-    if original_info[0] != 0 or updated_info[0] != 0:
-        return f"Error getting image info: {original_info[2]} {updated_info[2]}"
-    # Extract dimensions from identify output (format: 'filename PNG WxH WxH+0+0 ...' or 'filename JPEG WxH ...')
-    dim_match = re.compile(r'(PNG|JPEG) (\d+x\d+)')
-    original_dim_match = dim_match.search(original_info[1])
-    updated_dim_match = dim_match.search(updated_info[1])
-    if not original_dim_match or not updated_dim_match:
-        return f"Error parsing dimensions: ORIGINAL='{original_info[1]}', UPDATED='{updated_info[1]}'"
-    original_dims = original_dim_match.group(2)
-    updated_dims = updated_dim_match.group(2)
-    if original_dims != updated_dims:
-        return f"Different dimensions: ORIGINAL={original_dims}, UPDATED={updated_dims}"
-    # Compare pixel differences
-    diff_cmd = f"compare {original_path} {updated_path} -metric AE null:"
-    diff_result = run_command(diff_cmd)
-    diff_value = diff_result[2].strip()
     try:
-        pixel_diff = float(diff_value)
-        if pixel_diff == 0:
-            return "IDENTICAL"
-        else:
-            diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}")
-            diff_img_cmd = f"compare {original_path} {updated_path} -compose src-over {diff_path}"
-            run_command(diff_img_cmd)
-            return f"DIFFERENT: {pixel_diff} pixels changed (diff saved to {diff_path})"
-    except ValueError:
-        return f"Error parsing difference: {diff_value}"
+        img1 = Image.open(original_path).convert('RGBA')
+        img2 = Image.open(updated_path).convert('RGBA')
+    except Exception as e:
+        print(f"[WARN] Could not open as image: {original_path} or {updated_path}: {e}")
+        # Try text compare
+        try:
+            with open(original_path, 'r', encoding='utf-8') as f1, open(updated_path, 'r', encoding='utf-8') as f2:
+                original_content = f1.read()
+                updated_content = f2.read()
+                if original_content == updated_content:
+                    return "IDENTICAL (text)"
+                else:
+                    return "DIFFERENT: text contents do not match (fallback)"
+        except Exception as text_e:
+            print(f"[WARN] Could not open as text: {original_path} or {updated_path}: {text_e}")
+            # Fallback: binary compare
+            try:
+                with open(original_path, 'rb') as f1, open(updated_path, 'rb') as f2:
+                    if f1.read() == f2.read():
+                        return "IDENTICAL (binary)"
+                    else:
+                        return "DIFFERENT: file contents do not match (binary fallback)"
+            except Exception as bin_e:
+                return f"Error opening files as image, text, or binary: {bin_e}"
+    if img1.size != img2.size:
+        return f"Different dimensions: ORIGINAL={img1.size}, UPDATED={img2.size}"
+    diff = ImageChops.difference(img1, img2)
+    bbox = diff.getbbox()
+    if bbox is None:
+        return "IDENTICAL"
+    else:
+        # Count nonzero pixels (any channel difference)
+        diff_pixels = sum(1 for pixel in diff.getdata() if pixel[:3] != (0, 0, 0))
+        diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}")
+        # Enhance diff for visibility (optional: multiply difference)
+        enhanced_diff = diff.copy()
+        enhanced_diff = enhanced_diff.convert('RGB')
+        enhanced_diff.save(diff_path)
+        return f"DIFFERENT: {diff_pixels} pixels changed (diff saved to {diff_path})"
 
 def compare_text(original_path, updated_path):
     if not os.path.exists(original_path):
@@ -94,7 +108,7 @@ def compare_text(original_path, updated_path):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Compare files between two directories. Images: pixel diff, CSV/SVG: text, others: binary.")
+    parser = argparse.ArgumentParser(description="Compare files between two directories. Images: pixel diff (using Pillow), CSV/SVG: text, others: binary.")
     parser.add_argument('original_dir', nargs='?', help="Original results directory")
     parser.add_argument('updated_dir', nargs='?', help="Updated results directory")
     parser.add_argument('--diff-dir', default=None, help="Directory to save difference images (default: <updated_dir>_diff)")
@@ -125,6 +139,8 @@ def main():
             result = compare_images(original_path, updated_path, diff_dir, 'png')
         elif file_type == 'image/jpeg':
             result = compare_images(original_path, updated_path, diff_dir, 'jpeg')
+        elif file_type == 'image/tiff':
+            result = compare_images(original_path, updated_path, diff_dir, 'tiff')
         elif file_type == 'text/csv' or filename.lower().endswith('.csv'):
             result = compare_text(original_path, updated_path)
         elif file_type == 'image/svg+xml' or filename.lower().endswith('.svg'):
