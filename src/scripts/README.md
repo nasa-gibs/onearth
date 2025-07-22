@@ -100,6 +100,35 @@ optional arguments:
                         S3 URI -- for use with localstack testing
 ```
 
+## image_compare.py
+
+Compares files between two directories. For PNG and JPEG files, it compares pixel differences and creates difference images. For CSV and SVG files, it compares contents exactly. For other files, it compares binary contents. Useful for regression testing or validating output changes.
+
+```
+Usage: image_compare.py [original_dir] [updated_dir] [--diff-dir DIFF_DIR]
+
+Compares files in the updated directory to those in the original directory.
+
+Positional arguments:
+  original_dir           Original results directory
+  updated_dir            Updated results directory
+
+Optional arguments:
+  --diff-dir DIFF_DIR    Directory to save difference images (default: <updated_dir>_diff)
+
+Behavior:
+- For each file in the updated directory, compares it to the file of the same name in the original directory.
+- PNG and JPEG files: pixel-by-pixel comparison using ImageMagick. If differences are found, a diff image is saved in the diff directory.
+- CSV and SVG files: compared as text.
+- Other text files: compared as text.
+- All other files: compared as binary.
+- Reports identical, different, and missing files, and summarizes the results at the end.
+
+Example:
+  python image_compare.py baseline_results/ new_results/ --diff-dir diff_images/
+
+```
+
 ## Contact
 
 Contact us by sending an email to
