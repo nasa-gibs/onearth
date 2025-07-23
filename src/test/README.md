@@ -23,6 +23,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_twmsbox_wmts_convert.py` -- tests ancillary WMTS/TWMS helper scripts (`twmsbox2wmts.py` and `wmts2twmsbox.py`)
 * `test_validate_palette.py` -- tests `oe_validate_palette.py`
 * `test_vectorgen.py` -- tests vectorgen
+* `test_image_compare.py` -- tests `image_compare.py`
 
 ## Running tests in Docker
 
@@ -345,3 +346,25 @@ The following test cases for `oe_generate_empty_tile.py` are defined in this [fi
 10. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--offset` and `--factor` options
 11. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--precision` option
 12. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--densify` option with `r` specified for "ramp"
+
+--------
+## image_compare.py Tests
+
+The following tests are implemented in `test_image_compare.py`:
+
+1. **test_identical_png**: Identical PNG images (pixel comparison)
+2. **test_different_png**: Different PNG images (pixel comparison, diff image generated)
+3. **test_identical_jpeg**: Identical JPEG images (pixel comparison)
+4. **test_different_jpeg**: Different JPEG images (pixel comparison, diff image generated)
+5. **test_identical_tiff**: Identical TIFF images (pixel comparison)
+6. **test_different_tiff**: Different TIFF images (pixel comparison, diff image generated)
+7. **test_text_compare_identical**: Identical text files (text comparison)
+8. **test_text_compare_different**: Different text files (text comparison)
+9. **test_binary_compare_identical**: Identical binary files (binary comparison)
+10. **test_binary_compare_different**: Different binary files (binary comparison)
+11. **test_corrupt_image_fallback**: Corrupt image files, fallback to text (identical)
+12. **test_corrupt_image_fallback_different**: Corrupt image files, fallback to text (different)
+13. **test_corrupt_image_fallback_binary_identical**: Corrupt image files, fallback to binary (identical)
+14. **test_corrupt_image_fallback_binary_different**: Corrupt image files, fallback to binary (different)
+15. **test_svg_identical**: Identical SVG files, compared as text and as rendered images
+16. **test_svg_different**: Different SVG files, compared as text and as rendered images (diff image generated)

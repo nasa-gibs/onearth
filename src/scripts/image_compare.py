@@ -25,6 +25,8 @@ from pathlib import Path
 import re
 from PIL import Image, ImageChops
 
+DEBUG = False
+
 def get_file_type(path):
     """Detect the actual file type using the file extension."""
     if not os.path.exists(path):
@@ -46,50 +48,74 @@ def get_file_type(path):
         return ''
 
 def compare_images(original_path, updated_path, diff_dir, ext):
-    """Compare two images using Pillow. ext should be 'png', 'jpeg', or 'tiff'.
-    If image open fails, try text compare, then binary compare."""
+    if DEBUG:
+        print(f"[DEBUG] Comparing images: {original_path} vs {updated_path}")
     if not os.path.exists(original_path):
+        if DEBUG:
+            print(f"[DEBUG] ORIGINAL file missing: {original_path}")
         return f"ORIGINAL file missing: {original_path}"
     if not os.path.exists(updated_path):
+        if DEBUG:
+            print(f"[DEBUG] UPDATED file missing: {updated_path}")
         return f"UPDATED file missing: {updated_path}"
     try:
-        img1 = Image.open(original_path).convert('RGBA')
-        img2 = Image.open(updated_path).convert('RGBA')
+        img1 = Image.open(original_path).convert('RGB')
+        img2 = Image.open(updated_path).convert('RGB')
+        if DEBUG:
+            print(f"[DEBUG] Image 1 size: {img1.size}, Image 2 size: {img2.size}")
+            print(f"[DEBUG] Image 1 first pixel: {img1.getpixel((0,0))}, Image 2 first pixel: {img2.getpixel((0,0))}")
     except Exception as e:
-        print(f"[WARN] Could not open as image: {original_path} or {updated_path}: {e}")
-        # Try text compare
+        if DEBUG:
+            print(f"[DEBUG] Error opening images: {e}")
+        # Fallback: try text compare
         try:
             with open(original_path, 'r', encoding='utf-8') as f1, open(updated_path, 'r', encoding='utf-8') as f2:
                 original_content = f1.read()
                 updated_content = f2.read()
                 if original_content == updated_content:
+                    if DEBUG:
+                        print("[DEBUG] Fallback text compare: IDENTICAL")
                     return "IDENTICAL (text)"
                 else:
+                    if DEBUG:
+                        print("[DEBUG] Fallback text compare: DIFFERENT")
                     return "DIFFERENT: text contents do not match (fallback)"
         except Exception as text_e:
-            print(f"[WARN] Could not open as text: {original_path} or {updated_path}: {text_e}")
+            if DEBUG:
+                print(f"[DEBUG] Could not open as text: {text_e}")
             # Fallback: binary compare
             try:
                 with open(original_path, 'rb') as f1, open(updated_path, 'rb') as f2:
                     if f1.read() == f2.read():
+                        if DEBUG:
+                            print("[DEBUG] Fallback binary compare: IDENTICAL")
                         return "IDENTICAL (binary)"
                     else:
+                        if DEBUG:
+                            print("[DEBUG] Fallback binary compare: DIFFERENT")
                         return "DIFFERENT: file contents do not match (binary fallback)"
             except Exception as bin_e:
+                if DEBUG:
+                    print(f"[DEBUG] Could not open as binary: {bin_e}")
                 return f"Error opening files as image, text, or binary: {bin_e}"
     if img1.size != img2.size:
+        if DEBUG:
+            print("[DEBUG] Different dimensions")
         return f"Different dimensions: ORIGINAL={img1.size}, UPDATED={img2.size}"
     diff = ImageChops.difference(img1, img2)
     bbox = diff.getbbox()
+    if DEBUG:
+        print(f"[DEBUG] Diff bbox: {bbox}")
     if bbox is None:
+        if DEBUG:
+            print("[DEBUG] Images are IDENTICAL")
         return "IDENTICAL"
     else:
-        # Count nonzero pixels (any channel difference)
         diff_pixels = sum(1 for pixel in diff.getdata() if pixel[:3] != (0, 0, 0))
+        if DEBUG:
+            print(f"[DEBUG] Pixel diff count: {diff_pixels}")
         diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}")
-        # Enhance diff for visibility (optional: multiply difference)
-        enhanced_diff = diff.copy()
-        enhanced_diff = enhanced_diff.convert('RGB')
+        enhanced_diff = diff.copy().convert('RGB')
         enhanced_diff.save(diff_path)
         return f"DIFFERENT: {diff_pixels} pixels changed (diff saved to {diff_path})"
 
@@ -106,13 +132,49 @@ def compare_text(original_path, updated_path):
         else:
             return "DIFFERENT: text contents do not match"
 
+def compare_svg(original_path, updated_path, diff_dir):
+    # First, compare as text
+    text_result = compare_text(original_path, updated_path)
+    # Now, try to render both SVGs to PNG and compare as images
+    try:
+        import cairosvg
+        from PIL import Image
+        import io
+        with open(original_path, 'r', encoding='utf-8') as f:
+            svg1 = f.read()
+        with open(updated_path, 'r', encoding='utf-8') as f:
+            svg2 = f.read()
+        png1 = cairosvg.svg2png(bytestring=svg1.encode('utf-8'))
+        png2 = cairosvg.svg2png(bytestring=svg2.encode('utf-8'))
+        img1 = Image.open(io.BytesIO(png1)).convert('RGB')
+        img2 = Image.open(io.BytesIO(png2)).convert('RGB')
+        diff = ImageChops.difference(img1, img2)
+        bbox = diff.getbbox()
+        if bbox is None:
+            image_result = "IDENTICAL (rendered image)"
+        else:
+            diff_pixels = sum(1 for pixel in diff.getdata() if pixel[:3] != (0, 0, 0))
+            diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}.png")
+            diff_img = diff.copy().convert('RGB')
+            diff_img.save(diff_path)
+            image_result = f"DIFFERENT (rendered image): {diff_pixels} pixels changed (diff saved to {diff_path})"
+    except ImportError:
+        image_result = "[WARN] cairosvg not installed, skipping SVG image comparison"
+    except Exception as e:
+        image_result = f"[WARN] SVG image comparison failed: {e}"
+    return f"SVG text: {text_result}\nSVG image: {image_result}"
+
 def main():
     import argparse
+    global DEBUG
     parser = argparse.ArgumentParser(description="Compare files between two directories. Images: pixel diff (using Pillow), CSV/SVG: text, others: binary.")
     parser.add_argument('original_dir', nargs='?', help="Original results directory")
     parser.add_argument('updated_dir', nargs='?', help="Updated results directory")
     parser.add_argument('--diff-dir', default=None, help="Directory to save difference images (default: <updated_dir>_diff)")
+    parser.add_argument('--debug', action='store_true', help="Enable debug output")
     args = parser.parse_args()
+
+    DEBUG = args.debug
 
     original_dir = args.original_dir
     updated_dir = args.updated_dir
@@ -127,6 +189,14 @@ def main():
     identical_count = 0
     different_count = 0
     missing_count = 0
+    # Main summary counts
+    image_identical_count = 0  # Only non-SVG images
+    image_different_count = 0  # Only non-SVG images
+    svg_fully_identical = 0
+    svg_partial_image_only = 0
+    svg_partial_text_only = 0
+    svg_fully_different = 0
+    partially_identical_count = 0
     for filename in sorted(updated_files):
         original_path = os.path.join(original_dir, filename)
         updated_path = os.path.join(updated_dir, filename)
@@ -137,14 +207,53 @@ def main():
         result = None
         if file_type == 'image/png':
             result = compare_images(original_path, updated_path, diff_dir, 'png')
+            if "IDENTICAL" in result:
+                image_identical_count += 1
+            else:
+                image_different_count += 1
         elif file_type == 'image/jpeg':
             result = compare_images(original_path, updated_path, diff_dir, 'jpeg')
+            if "IDENTICAL" in result:
+                image_identical_count += 1
+            else:
+                image_different_count += 1
         elif file_type == 'image/tiff':
             result = compare_images(original_path, updated_path, diff_dir, 'tiff')
+            if "IDENTICAL" in result:
+                image_identical_count += 1
+            else:
+                image_different_count += 1
         elif file_type == 'text/csv' or filename.lower().endswith('.csv'):
             result = compare_text(original_path, updated_path)
         elif file_type == 'image/svg+xml' or filename.lower().endswith('.svg'):
-            result = compare_text(original_path, updated_path)
+            result = compare_svg(original_path, updated_path, diff_dir)
+            # Parse SVG result for summary counts
+            text_identical = False
+            image_identical = False
+            text_different = False
+            image_different = False
+            for line in result.splitlines():
+                if line.startswith('SVG text: IDENTICAL'):
+                    text_identical = True
+                if line.startswith('SVG text: DIFFERENT'):
+                    text_different = True
+                if line.startswith('SVG image: IDENTICAL'):
+                    image_identical = True
+                if line.startswith('SVG image: DIFFERENT'):
+                    image_different = True
+            if text_identical and image_identical:
+                print(f"✓ {filename}: SVG text and image identical")
+                svg_fully_identical += 1
+            elif text_identical and not image_identical:
+                print(f"~ {filename}: SVG text identical, image different")
+                svg_partial_text_only += 1
+            elif image_identical and not text_identical:
+                print(f"~ {filename}: SVG image identical, text different")
+                svg_partial_image_only += 1
+            elif text_different and image_different:
+                print(f"Δ {filename}: SVG text and image different")
+                svg_fully_different += 1
+            continue
         elif file_type.startswith('text/'):
             result = compare_text(original_path, updated_path)
         else:
@@ -169,12 +278,20 @@ def main():
             print(f"Δ {filename}: {result}")
             different_count += 1
 
+    # Calculate summary counts
+    total_svg = svg_fully_identical + svg_partial_image_only + svg_partial_text_only + svg_fully_different
+    identical_count = image_identical_count + svg_fully_identical
+    partially_identical_count = svg_partial_image_only + svg_partial_text_only
+    different_count = image_different_count + svg_fully_different
+    total_comparisons = len(updated_files)
+
     print("=" * 80)
     print(f"Summary:")
-    print(f"  Identical: {identical_count}")
-    print(f"  Different: {different_count}")
+    print(f"  Identical: {identical_count} ({image_identical_count} images, {svg_fully_identical} SVGs)")
+    print(f"  Partially Identical: {partially_identical_count} ({svg_partial_image_only} SVGs image only, {svg_partial_text_only} SVGs text only)")
+    print(f"  Different: {different_count} ({image_different_count} images, {svg_fully_different} SVGs)")
     print(f"  Missing: {missing_count}")
-    print(f"  Total: {len(updated_files)}")
+    print(f"  Total comparisons: {total_comparisons}")
 
     if different_count > 0:
         print(f"\nDifference images saved to: {diff_dir}")
