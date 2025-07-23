@@ -28,7 +28,7 @@ from PIL import Image, ImageChops
 DEBUG = False
 
 def get_file_type(path):
-    """Detect the actual file type using the file extension."""
+    """Detect the actual file type using the file extension and, for TIFFs, check for LERC compression."""
     if not os.path.exists(path):
         return None
     ext = os.path.splitext(path)[1].lower()
@@ -37,7 +37,19 @@ def get_file_type(path):
     elif ext in ('.jpg', '.jpeg'):
         return 'image/jpeg'
     elif ext in ('.tif', '.tiff'):
+        # Check for LERC compression in TIFF
+        try:
+            from osgeo import gdal
+            ds = gdal.Open(path)
+            if ds:
+                md = ds.GetMetadata('IMAGE_STRUCTURE')
+                if md.get('COMPRESSION', '').upper() == 'LERC':
+                    return 'image/lerc'
+        except ImportError:
+            pass
         return 'image/tiff'
+    elif ext == '.lerc':
+        return 'image/lerc'
     elif ext == '.csv':
         return 'text/csv'
     elif ext == '.svg':
@@ -164,6 +176,41 @@ def compare_svg(original_path, updated_path, diff_dir):
         image_result = f"[WARN] SVG image comparison failed: {e}"
     return f"SVG text: {text_result}\nSVG image: {image_result}"
 
+def compare_lerc_images(original_path, updated_path, diff_dir):
+    try:
+        from osgeo import gdal
+        import numpy as np
+        arr1 = None
+        arr2 = None
+        ds1 = gdal.Open(original_path)
+        ds2 = gdal.Open(updated_path)
+        if ds1 is None or ds2 is None:
+            return f"Error opening LERC images with GDAL"
+        arr1 = ds1.GetRasterBand(1).ReadAsArray()
+        arr2 = ds2.GetRasterBand(1).ReadAsArray()
+        if arr1.shape != arr2.shape:
+            return f"Different dimensions: {arr1.shape} vs {arr2.shape}"
+        diff = np.abs(arr1 - arr2)
+        diff_pixels = np.count_nonzero(diff)
+        if diff_pixels == 0:
+            return "IDENTICAL"
+        else:
+            # Optionally, save a diff image (as PNG)
+            try:
+                from PIL import Image
+                import numpy as np
+                norm = (diff > 0).astype(np.uint8) * 255
+                diff_img = Image.fromarray(norm)
+                diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}.png")
+                diff_img.save(diff_path)
+                return f"DIFFERENT: {diff_pixels} pixels changed (diff saved to {diff_path})"
+            except Exception:
+                return f"DIFFERENT: {diff_pixels} pixels changed (diff image not saved)"
+    except ImportError:
+        return None  # Signal to fallback to binary
+    except Exception as e:
+        return f"Error comparing LERC images: {e}"
+
 def main():
     import argparse
     global DEBUG
@@ -223,6 +270,27 @@ def main():
                 image_identical_count += 1
             else:
                 image_different_count += 1
+        elif file_type == 'image/lerc':
+            result = compare_lerc_images(original_path, updated_path, diff_dir)
+            if result is None:
+                # GDAL not available, fallback to binary
+                if DEBUG:
+                    print(f"[DEBUG] GDAL not available, falling back to binary comparison for LERC: {original_path}, {updated_path}")
+                try:
+                    with open(original_path, 'rb') as f1, open(updated_path, 'rb') as f2:
+                        if f1.read() == f2.read():
+                            result = "IDENTICAL (binary fallback)"
+                            image_identical_count += 1
+                        else:
+                            result = "DIFFERENT: file contents do not match (binary fallback)"
+                            image_different_count += 1
+                except Exception as e:
+                    result = f"Error opening files as LERC or binary: {e}"
+            else:
+                if "IDENTICAL" in result:
+                    image_identical_count += 1
+                else:
+                    image_different_count += 1
         elif file_type == 'text/csv' or filename.lower().endswith('.csv'):
             result = compare_text(original_path, updated_path)
         elif file_type == 'image/svg+xml' or filename.lower().endswith('.svg'):

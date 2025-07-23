@@ -120,6 +120,7 @@ Optional arguments:
 Behavior:
 - For each file in the updated directory, compares it to the file of the same name in the original directory.
 - PNG, JPEG, TIFF files: pixel-by-pixel comparison using Pillow. If differences are found, a diff image is saved in the diff directory.
+- LERC files (and TIFFs with LERC compression): compared pixel-by-pixel using GDAL and numpy if available; if not, falls back to binary comparison. Diff images are generated for LERC differences if possible.
 - SVG files: compared as text, and also rendered to images and compared (requires cairosvg; if not installed, only text comparison is performed).
 - CSV and other text files: compared as text.
 - All other files: compared as binary.

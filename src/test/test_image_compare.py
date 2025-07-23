@@ -283,6 +283,47 @@ class TestImageCompareScript(unittest.TestCase):
         # Should report different for both text and image in the summary line
         self.assertIn('Δ test.svg: SVG text and image different', result.stdout)
 
+    def test_lerc_identical(self):
+        from osgeo import gdal, gdal_array
+        import numpy as np
+        orig_dir = os.path.join(self.test_dir, 'orig_lerc')
+        upd_dir = os.path.join(self.test_dir, 'upd_lerc')
+        os.makedirs(orig_dir, exist_ok=True)
+        os.makedirs(upd_dir, exist_ok=True)
+        orig_file = os.path.join(orig_dir, 'test.tif')
+        upd_file = os.path.join(upd_dir, 'test.tif')
+        arr = np.zeros((10, 10), dtype=np.uint8)
+        driver = gdal.GetDriverByName('GTiff')
+        ds1 = driver.Create(orig_file, 10, 10, 1, gdal.GDT_Byte, options=['COMPRESS=LERC'])
+        ds1.GetRasterBand(1).WriteArray(arr)
+        ds1 = None
+        ds2 = driver.Create(upd_file, 10, 10, 1, gdal.GDT_Byte, options=['COMPRESS=LERC'])
+        ds2.GetRasterBand(1).WriteArray(arr)
+        ds2 = None
+        result = self.run_image_compare(orig_dir, upd_dir, self.diff_dir)
+        self.assertIn('IDENTICAL', result.stdout)
+
+    def test_lerc_different(self):
+        from osgeo import gdal, gdal_array
+        import numpy as np
+        orig_dir = os.path.join(self.test_dir, 'orig_lerc2')
+        upd_dir = os.path.join(self.test_dir, 'upd_lerc2')
+        os.makedirs(orig_dir, exist_ok=True)
+        os.makedirs(upd_dir, exist_ok=True)
+        orig_file = os.path.join(orig_dir, 'test.tif')
+        upd_file = os.path.join(upd_dir, 'test.tif')
+        arr1 = np.zeros((10, 10), dtype=np.uint8)
+        arr2 = np.ones((10, 10), dtype=np.uint8)
+        driver = gdal.GetDriverByName('GTiff')
+        ds1 = driver.Create(orig_file, 10, 10, 1, gdal.GDT_Byte, options=['COMPRESS=LERC'])
+        ds1.GetRasterBand(1).WriteArray(arr1)
+        ds1 = None
+        ds2 = driver.Create(upd_file, 10, 10, 1, gdal.GDT_Byte, options=['COMPRESS=LERC'])
+        ds2.GetRasterBand(1).WriteArray(arr2)
+        ds2 = None
+        result = self.run_image_compare(orig_dir, upd_dir, self.diff_dir)
+        self.assertIn('DIFFERENT', result.stdout)
+
 if __name__ == '__main__':
     import sys
     from optparse import OptionParser

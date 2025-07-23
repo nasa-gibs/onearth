@@ -368,3 +368,5 @@ The following tests are implemented in `test_image_compare.py`:
 14. **test_corrupt_image_fallback_binary_different**: Corrupt image files, fallback to binary (different)
 15. **test_svg_identical**: Identical SVG files, compared as text and as rendered images
 16. **test_svg_different**: Different SVG files, compared as text and as rendered images (diff image generated)
+17. **test_lerc_identical**: Identical LERC-compressed TIFF images (pixel comparison using GDAL)
+18. **test_lerc_different**: Different LERC-compressed TIFF images (pixel comparison using GDAL, diff image generated)
