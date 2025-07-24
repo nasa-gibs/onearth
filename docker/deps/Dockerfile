@@ -56,7 +56,7 @@ RUN wget https://go.dev/dl/go1.24.5.linux-amd64.tar.gz && \
 
 # Install yq
 WORKDIR /tmp
-RUN go install github.com/mikefarah/yq/v4@master
+RUN GOBIN=/usr/local/bin/ go install github.com/mikefarah/yq/v4@master
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
