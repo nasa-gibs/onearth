@@ -62,6 +62,10 @@ RUN mkdir /onearth && mkdir -p /etc/onearth
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
+
+# Create Apache cache directory and set permissions
+RUN mkdir -p /tmp/apache && chown -R www-data:www-data /tmp/apache && chmod 755 /tmp/apache
+
 RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
     chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log && \
 	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /onearth && \
