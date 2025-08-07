@@ -1,6 +1,6 @@
 #!/bin/sh
 ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
-GC_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
+GC_HEALTHCHECK=${2:-http://onearth-tile-services/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$3
 SHAPEFILE_SYNC=${4:-false}
 USE_LOCAL_SHAPEFILES=${5:-false}
@@ -28,13 +28,25 @@ cp ../sample_configs/mapfile-styles/Vector_Status.txt /etc/onearth/mapfile-style
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
+	echo "[$(date)] S3_CONFIGS not set for OnEarth configs, checking for local configs" >> /var/log/onearth/config.log
 
-  # Copy sample configs
-  cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
-  cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
-  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
-  cp -R ../sample_configs/mapfile-styles/* /etc/onearth/mapfile-styles/
+  # Check if configs are already mounted (local development)
+  # Look for any YAML endpoint config to detect local setup
+  LOCAL_CONFIGS=$(find /etc/onearth/config/endpoint/ -name "*.yaml" 2>/dev/null | head -1)
+  if [ -z "$LOCAL_CONFIGS" ]; then
+    echo "[$(date)] No local configs detected, using sample data" >> /var/log/onearth/config.log
+    # Copy sample configs
+    cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
+    cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+    cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+    cp -R ../sample_configs/mapfile-styles/* /etc/onearth/mapfile-styles/
+  else
+    echo "[$(date)] Local configs detected, skipping sample config copy" >> /var/log/onearth/config.log
+    # Only copy conf files if they don't exist (needed for tilematrixsets.xml, etc.)
+    find ../sample_configs/conf/ -name "*.xml" -exec sh -c 'test ! -f "/etc/onearth/config/conf/$(basename "$1")" && cp "$1" "/etc/onearth/config/conf/"' _ {} \; 2>/dev/null || true
+    # Copy mapfile-styles if they don't exist
+    find ../sample_configs/mapfile-styles/ -name "*" -exec sh -c 'test ! -f "/etc/onearth/mapfile-styles/$(basename "$1")" && cp "$1" "/etc/onearth/mapfile-styles/"' _ {} \; 2>/dev/null || true
+  fi
 else
 	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 

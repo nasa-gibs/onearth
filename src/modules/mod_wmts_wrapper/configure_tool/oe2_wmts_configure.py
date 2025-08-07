@@ -144,7 +144,7 @@ SourcePath {source_path}
 SourcePostfix {source_postfix}
 """
 
-GC_SERVICE_TEMPLATE = """# Redirects for GC service
+GC_SERVICE_TEMPLATE = r"""# Redirects for GC service
 RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/(.*)$ [NC]
 RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
@@ -184,7 +184,7 @@ RewriteRule ^(.*)$ https://%{ENV:S3_CONFIGS}.s3.amazonaws.com/capabilities/WMTS_
 
 """
 
-TWMS_GC_SERVICE_TEMPLATE = """# Redirects for TWMS GC/GTS service
+TWMS_GC_SERVICE_TEMPLATE = r"""# Redirects for TWMS GC/GTS service
 RewriteCond %{REQUEST_URI} ^{external_endpoint}/twms(.*)$ [NC]
 RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=twmsgetcapabilities [P,L]
@@ -248,7 +248,13 @@ def get_proxy_paths(layers):
             'data_file_uri')
         if not data_file_uri:
             continue
+        # Skip local file paths - only create proxies for HTTP/HTTPS URIs
+        if data_file_uri.startswith('/') or data_file_uri.startswith('file://'):
+            continue
         url_parts = urlsplit(data_file_uri)
+        # Skip if no scheme or netloc (local paths)
+        if not url_parts.scheme or not url_parts.netloc:
+            continue
         remote_path = f'{url_parts.scheme}://{url_parts.netloc}'
         if not any(path for path in proxy_paths
                    if path['remote_path'] == remote_path):
@@ -758,8 +764,8 @@ def get_layer_configs(endpoint_config):
 
     # Build all source configs - traversing down a single directory level
     if not layer_source.exists():
-        print(f"Can't find specified layer config location: {layer_source}")
-        sys.exit()
+        print(f"Can't find specified layer config location: {layer_source}. This may be expected for reprojected endpoints - continuing with empty layer config")
+        return layer_configs
     if layer_source.is_file():
         try:
             layer_config = get_layer_config(layer_source)
@@ -774,6 +780,10 @@ def get_layer_configs(endpoint_config):
                     layer_configs.append(layer_config)
                 except yaml.constructor.ConstructorError as err:
                     print(f'ERROR: Invalid YAML in layer configuration {err}')
+        
+        # If directory exists but is empty, log this (expected for reprojected endpoints)
+        if not layer_configs:
+            print(f"No layer configs found in {layer_source} - this may be expected for reprojected endpoints")
     return layer_configs
 
 

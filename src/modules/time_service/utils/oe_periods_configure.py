@@ -76,6 +76,11 @@ def get_layer_configs(endpoint_config, layer_filter='*'):
 def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=False):
     r = create_redis_client(host=redis_uri, port=redis_port)
     
+    # Check if we have any layer configurations to process
+    if not layer_configs:
+        print("No layer configurations found - skipping time configuration")
+        return
+    
     if 'projection' in layer_configs[0]['config'].keys():
             proj = str(layer_configs[0]['config']['projection']). \
                 lower().replace(':', '')

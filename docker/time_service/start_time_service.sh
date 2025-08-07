@@ -23,12 +23,22 @@ mkdir -p /etc/onearth/config/layers/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
+	echo "[$(date)] S3_CONFIGS not set for OnEarth configs, checking for local configs" >> /var/log/onearth/config.log
 
-  # Copy sample configs
-  cp ../sample_configs/conf/* /etc/onearth/config/conf/
-  cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
-  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  # Check if configs are already mounted (local development)
+  # Look for any YAML endpoint config to detect local setup
+  LOCAL_CONFIGS=$(find /etc/onearth/config/endpoint/ -name "*.yaml" 2>/dev/null | head -1)
+  if [ -z "$LOCAL_CONFIGS" ]; then
+    echo "[$(date)] No local configs detected, using sample data" >> /var/log/onearth/config.log
+    # Copy sample configs
+    cp ../sample_configs/conf/* /etc/onearth/config/conf/
+    cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+    cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  else
+    echo "[$(date)] Local configs detected, skipping sample config copy" >> /var/log/onearth/config.log
+    # Only copy conf files if they don't exist (needed for tilematrixsets.xml, etc.)
+    find ../sample_configs/conf/ -name "*.xml" -exec sh -c 'test ! -f "/etc/onearth/config/conf/$(basename "$1")" && cp "$1" "/etc/onearth/config/conf/"' _ {} \;
+  fi
 
 else
 	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
@@ -82,9 +92,16 @@ else
   grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST >> /var/log/onearth/config.log 2>&1
 fi
 
-# Load time periods by scraping S3 bucket, if requested
+# Load time periods by scraping S3 bucket or local directory, if requested
 if [ "$FORCE_TIME_SCRAPE" = true ]; then
-	python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
+	# Check if S3_URL is a local path (starts with /) or a bucket/URL
+	if [ "${S3_URL#/}" != "$S3_URL" ]; then
+		# Local path - use -s parameter
+		python3 /usr/bin/oe_scrape_time.py -r -s $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
+	else
+		# S3 bucket/URL - use -b parameter
+		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
+	fi
 fi
 
 # Load oe-status data

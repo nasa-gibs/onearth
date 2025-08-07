@@ -4,6 +4,9 @@ upstream
 build
 /dist/
 /docker/el9/rpms/
+/docker/local-deployment/local-mrf-archive/
+/docker/local-deployment/onearth-configs/
+/docker/local-deployment/downloaded-onearth-configs/
 /src/test/*.pyc
 /src/test/legends_test_data/*.png
 /src/test/legends_test_data/*.svg

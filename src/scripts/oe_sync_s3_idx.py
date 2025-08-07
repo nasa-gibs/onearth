@@ -116,13 +116,66 @@ def calculate_s3_etag(file_path, chunk_size=8 * 1024 * 1024):
     return '"{}-{}"'.format(digests_md5.hexdigest(), len(md5s))
 
 
+def syncIdxLocal(source_path, dest_dir, prefix, force, dry_run):
+    """
+    Sync IDX files from a local directory to destination directory
+    """
+    import shutil
+    
+    print(f"Syncing IDX files from local path: {source_path} to {dest_dir}")
+    
+    if not os.path.exists(source_path):
+        print(f"Source path {source_path} does not exist")
+        return
+        
+    # Find all .idx files in source path
+    idx_files = []
+    for root, dirs, files in os.walk(source_path):
+        for file in files:
+            if file.lower().endswith('.idx'):
+                source_file = os.path.join(root, file)
+                # Calculate relative path from source_path
+                rel_path = os.path.relpath(source_file, source_path)
+                idx_files.append((source_file, rel_path))
+    
+    print(f"Found {len(idx_files)} IDX files to sync")
+    
+    for source_file, rel_path in idx_files:
+        dest_file = os.path.join(dest_dir, rel_path)
+        dest_file_dir = os.path.dirname(dest_file)
+        
+        # Create destination directory
+        if not os.path.exists(dest_file_dir) and not dry_run:
+            os.makedirs(dest_file_dir, exist_ok=True)
+            
+        # Check if we should copy the file
+        should_copy = force or not os.path.exists(dest_file)
+        
+        if should_copy:
+            if dry_run:
+                print(f"[DRY RUN] Would copy: {source_file} -> {dest_file}")
+            else:
+                print(f"Copying: {source_file} -> {dest_file}")
+                shutil.copy2(source_file, dest_file)
+        else:
+            print(f"Skipping existing file: {dest_file}")
+    
+    print(f"Local IDX sync completed")
+
+
 def syncIdx(bucket,
-            dir,
-            prefix,
-            force,
-            checksum,
-            dry_run,
-            s3_uri=None):
+             dir,
+             prefix,
+             force,
+             checksum,
+             dry_run,
+             s3_uri=None):
+
+    # Check if bucket is actually a local path (starts with /)
+    local_path = bucket.startswith('/') or bucket.startswith('~')
+    
+    if local_path:
+        return syncIdxLocal(bucket, dir, prefix, force, dry_run)
 
     session = boto3.session.Session()
 

@@ -18,6 +18,15 @@ sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
 # Disable fancy indexing
 sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
 
+# Check if we should generate dynamic demo page or use static one
+CONFIG_DIR="/etc/onearth/config"
+if [ -d "$CONFIG_DIR" ]; then
+    echo "Config directory found, generating dynamic demo page..."
+    /var/www/html/demo/generate_demo_page.sh
+else
+    echo "Config directory not mounted at $CONFIG_DIR, using static demo page"
+fi
+
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
 sleep 2

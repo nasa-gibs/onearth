@@ -200,10 +200,10 @@ layer_configs = get_layer_configs(endpoint_config)
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
-# Replace matching host names with local Docker host IP http://172.17.0.1 so that connections stay local
+# Replace matching host names with Docker service name so that connections stay within the Docker network
 if endpoint_config['mapserver'].get('replace_with_local'):
     replace_with_local = endpoint_config['mapserver']['replace_with_local']
-    gc_url = gc_url.replace(replace_with_local, 'http://172.17.0.1:8080')
+    gc_url = gc_url.replace(replace_with_local, 'http://onearth-tile-services')
 
 gc_content = get_gc(gc_url)
 
@@ -238,10 +238,10 @@ for layer in layers:
     resource_url = layer.findall('{*}ResourceURL')[0] # get first if multiple found
     bands_count = {'image/png': 4, 'image/lerc': 1}.get(resource_url.get('format'), 3)
     template_string = resource_url.get('template')
-    # Replace matching host names with local Docker host IP http://172.17.0.1 so that connections stay local
+    # Replace matching host names with Docker service name so that connections stay within the Docker network
     if endpoint_config['mapserver'].get('replace_with_local'):
         replace_with_local = endpoint_config['mapserver']['replace_with_local']
-        template_string = template_string.replace(replace_with_local, 'http://172.17.0.1:8080')
+        template_string = template_string.replace(replace_with_local, 'http://onearth-tile-services')
 
     dimension_info = ''
     validation_info = VALIDATION_TEMPLATE

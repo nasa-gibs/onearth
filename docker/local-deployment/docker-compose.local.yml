@@ -1,0 +1,216 @@
+services:
+  onearth-deps:
+    platform: ${DOCKER_PLATFORM_OPTION}
+    build:
+      context: ../..
+      dockerfile: docker/deps/Dockerfile
+      no_cache: true  
+      tags: 
+        - ${ONEARTH_DEPS_TAG} 
+    networks:
+      - oe2
+    deploy:
+      replicas: 0
+  onearth-time-service:
+    container_name: onearth-time-service
+    hostname: onearth-time-service
+    platform: ${DOCKER_PLATFORM_OPTION}
+    ports: 
+      - 6379:6379
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/time_service/Dockerfile
+      no_cache: true  
+      tags: 
+        - nasagibs/onearth-time-service:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    environment: 
+      DEBUG_LOGGING: $DEBUG_LOGGING
+      S3_URL: /onearth/archive
+      FORCE_TIME_SCRAPE: true
+    networks:
+      - oe2
+    restart: always
+    volumes:
+      - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+  onearth-tile-services:
+    container_name: onearth-tile-services
+    hostname: onearth-tile-services
+    platform: ${DOCKER_PLATFORM_OPTION}
+    ports:
+      - 443:443
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/tile_services/Dockerfile
+      no_cache: true  
+      tags: 
+        - nasagibs/onearth-tile-services:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    environment: 
+      USE_SSL: $USE_SSL
+      SERVER_NAME: $SERVER_NAME
+      DEBUG_LOGGING: $DEBUG_LOGGING
+      S3_URL: /onearth/archive
+      IDX_SYNC: true
+    volumes: 
+      - ./certs:/home/oe2/onearth/certs
+      - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+    networks:
+      - oe2
+    restart: always
+  onearth-capabilities:
+    container_name: onearth-capabilities
+    hostname: onearth-capabilities
+    platform: ${DOCKER_PLATFORM_OPTION}
+    ports: 
+      - 8081:80
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/capabilities/Dockerfile
+      no_cache: true  
+      tags: 
+        - nasagibs/onearth-capabilities:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    environment: 
+      DEBUG_LOGGING: $DEBUG_LOGGING
+    networks:
+      - oe2
+    restart: always
+    volumes:
+      - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+  onearth-reproject:
+    container_name: onearth-reproject
+    hostname: onearth-reproject
+    platform: ${DOCKER_PLATFORM_OPTION}
+    ports: 
+      - 8082:80
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+      onearth-time-service:
+        condition: service_healthy
+      onearth-tile-services:
+        condition: service_healthy
+      onearth-capabilities:
+        condition: service_healthy
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/reproject/Dockerfile
+      no_cache: true  
+      tags: 
+        - nasagibs/onearth-reproject:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    environment: 
+      DEBUG_LOGGING: $DEBUG_LOGGING
+    networks:
+      - oe2
+    restart: always
+    volumes:
+      - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+  onearth-wms:
+    container_name: onearth-wms
+    hostname: onearth-wms
+    platform: ${DOCKER_PLATFORM_OPTION}
+    ports: 
+      - 8443:443
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+      onearth-time-service:
+        condition: service_healthy
+      onearth-tile-services:
+        condition: service_healthy
+      onearth-capabilities:
+        condition: service_healthy
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/wms_service/Dockerfile
+      no_cache: false  
+      tags: 
+        - nasagibs/onearth-wms:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    environment: 
+      USE_SSL: $USE_SSL
+      SERVER_NAME: $SERVER_NAME
+      DEBUG_LOGGING: $DEBUG_LOGGING
+    volumes: 
+      - ./certs:/home/oe2/onearth/certs
+      - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+    networks:
+      - oe2
+    restart: always
+  onearth-demo:
+    container_name: onearth-demo
+    hostname: onearth-demo
+    platform: ${DOCKER_PLATFORM_OPTION}
+    ports:
+      - 80:80
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+      onearth-time-service:
+        condition: service_healthy
+      onearth-tile-services:
+        condition: service_healthy
+      onearth-capabilities:
+        condition: service_healthy
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/demo/Dockerfile
+      no_cache: true  
+      tags: 
+        - nasagibs/onearth-demo:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    environment: 
+      DEBUG_LOGGING: $DEBUG_LOGGING
+    volumes:
+      - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+    networks:
+      - oe2
+    restart: always
+  onearth-tools:
+    container_name: onearth-tools
+    platform: ${DOCKER_PLATFORM_OPTION}
+    depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
+    build:
+      args: 
+        ONEARTH_VERSION: $ONEARTH_VERSION
+      context: ../..
+      dockerfile: docker/tools/Dockerfile
+      no_cache: true  
+      tags: 
+        - nasagibs/onearth-tools:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    networks:
+      - oe2
+    restart: always
+    profiles:
+      - enable-tools
+    deploy:
+      replicas: $START_ONEARTH_TOOLS_CONTAINER
+
+networks:
+  oe2:
+    driver: bridge 

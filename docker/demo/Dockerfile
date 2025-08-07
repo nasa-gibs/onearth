@@ -11,6 +11,7 @@ RUN yum install -y httpd mod_ssl perl && \
 
 RUN mkdir -p /home/oe2
 COPY ./docker/demo/start_demo.sh /home/oe2/
+COPY ./version.sh /home/oe2/
 
 # Copy Apache configs
 COPY ./docker/demo/oe2_demo.conf /etc/httpd/conf.d/

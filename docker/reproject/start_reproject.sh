@@ -26,12 +26,22 @@ mkdir -p /etc/onearth/config/layers/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
+  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, checking for local configs" >> /var/log/onearth/config.log
 
-  # Copy sample configs
-  cp ../sample_configs/conf/* /etc/onearth/config/conf/
-  cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
-  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  # Check if configs are already mounted (local development)
+  # Look for any YAML endpoint config to detect local setup
+  LOCAL_CONFIGS=$(find /etc/onearth/config/endpoint/ -name "*.yaml" 2>/dev/null | head -1)
+  if [ -z "$LOCAL_CONFIGS" ]; then
+    echo "[$(date)] No local configs detected, using sample data" >> /var/log/onearth/config.log
+    # Copy sample configs
+    cp ../sample_configs/conf/* /etc/onearth/config/conf/
+    cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+    cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  else
+    echo "[$(date)] Local configs detected, skipping sample config copy" >> /var/log/onearth/config.log
+    # Only copy conf files if they don't exist (needed for tilematrixsets.xml, etc.)
+    find ../sample_configs/conf/ -name "*.xml" -exec sh -c 'test ! -f "/etc/onearth/config/conf/$(basename "$1")" && cp "$1" "/etc/onearth/config/conf/"' _ {} \;
+  fi
 
   # Load test layers
   mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
@@ -104,15 +114,31 @@ sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s
 mkdir -p /etc/onearth/config/layers/oe-status/
 cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 
-# Now configure oe-status and start apache for reproject health checks
-cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+# Configure oe-status for reproject health checks
+# Check if oe-status_reproject.yaml already exists (from volume mount) as is the case during local deployment
+OE_STATUS_REPROJECT_EXISTS=false
+if [ -f "/etc/onearth/config/endpoint/oe-status_reproject.yaml" ]; then
+  OE_STATUS_REPROJECT_EXISTS=true
+  echo "[$(date)] Using existing oe-status_reproject.yaml from config directory" >> /var/log/onearth/config.log
+else
+  echo "[$(date)] Copying oe-status_reproject.yaml for temporary use" >> /var/log/onearth/config.log
+  cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+fi
+
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 if [ "$USE_SSL" = true ]; then
   python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml -l "https://$SERVER_NAME" >>/var/log/onearth/config.log 2>&1
 else
   python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 fi
-rm /etc/onearth/config/endpoint/oe-status_reproject.yaml
+
+# Only remove the file if we copied it temporarily (not from volume mount)
+if [ "$OE_STATUS_REPROJECT_EXISTS" = false ]; then
+  echo "[$(date)] Removing temporary oe-status_reproject.yaml" >> /var/log/onearth/config.log
+  rm /etc/onearth/config/endpoint/oe-status_reproject.yaml
+else
+  echo "[$(date)] Preserving oe-status_reproject.yaml from config directory" >> /var/log/onearth/config.log
+fi
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k start

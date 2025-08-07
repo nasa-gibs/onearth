@@ -1,0 +1,26 @@
+# EPSG:3857 Layer Configuration Template
+# Copy this file and customize for each layer you want to serve in Web Mercator projection
+
+abstract: {LAYER_NAME} abstract
+layer_id: {LAYER_NAME}
+layer_name: {LAYER_NAME} tileset
+layer_title: {LAYER_TITLE}
+metadata: []
+mime_type: image/jpeg
+projection: EPSG:3857
+source_mrf:
+  bands: 3
+  bbox: -20037508.34,-20037508.34,20037508.34,20037508.34  # Web Mercator bounds
+  data_file_uri: 'file:///onearth/archive/epsg3857'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
+  idx_path: /onearth/idx/epsg3857
+  size_x: {SIZE_X}     # Depends on your data - typically 2^n * tile_size
+  size_y: {SIZE_Y}     # Depends on your data - typically 2^n * tile_size  
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+tilematrixset: {TILEMATRIXSET}  # e.g., GoogleMapsCompatible_Level6, 1km, 500m, etc.
+tilematrixset_limits_id: {TILEMATRIXSET_LIMITS}  # Optional: limits for this layer
+time_config:
+- DETECT/DETECT/{TIME_INTERVAL}  # e.g., PT10M for 10 minutes, P1D for daily 

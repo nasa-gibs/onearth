@@ -1,0 +1,34 @@
+time_service_uri: "http://onearth-time-service/time_service/time"
+time_service_keys: ["epsg3031"]
+gc_service_uri: "http://onearth-capabilities/wmts/epsg3031/{{ENDPOINT}}/gc"
+exclude_layers: []
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+layer_config_source: "/etc/onearth/config/layers/epsg3031/{{ENDPOINT}}/"
+apache_config_location: "/etc/httpd/conf.d/"
+base_uri_gc: "http://localhost/wmts/epsg3031/{{ENDPOINT}}/"
+base_uri_gts: "http://localhost/twms/epsg3031/{{ENDPOINT}}/"
+base_uri_meta: "http://localhost"
+epsg_code: "EPSG:3031"
+gc_service:
+  internal_endpoint: "/var/www/html/wmts/epsg3031/{{ENDPOINT}}"
+  external_endpoint: "/wmts/epsg3031/{{ENDPOINT}}/gc"
+  config_prefix: "epsg3031_{{ENDPOINT}}_gc_service"
+  gc_header_file: "/etc/onearth/config/conf/epsg3031_header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/epsg3031_header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/epsg3031_header_twms_gc.xml"
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts/epsg3031/{{ENDPOINT}}"
+  external_endpoint: "/wmts/epsg3031/{{ENDPOINT}}"
+  config_prefix: "epsg3031_{{ENDPOINT}}"
+twms_service:
+  internal_endpoint: "/var/www/html/twms/epsg3031/{{ENDPOINT}}"
+  external_endpoint: "/twms/epsg3031/{{ENDPOINT}}"
+mapserver:
+  internal_endpoint: "/var/www/html/wms/epsg3031/{{ENDPOINT}}"
+  external_endpoint: "/wms/epsg3031/{{ENDPOINT}}"
+  redirect_endpoint: "/var/www/html/mapserver/epsg3031/{{ENDPOINT}}"
+  config_prefix: "epsg3031_{{ENDPOINT}}_wms_time_service"
+  mapfile_header: "/etc/onearth/config/mapserver/epsg3031_{{ENDPOINT}}.header"
+  mapfile_location: "/etc/onearth/config/mapserver/epsg3031_{{ENDPOINT}}.map"
+  source_wmts_gc_uri: "http://localhost/wmts/epsg3031/{{ENDPOINT}}/1.0.0/WMTSCapabilities.xml"
+  replace_with_local: "http://localhost"

@@ -73,12 +73,22 @@ mkdir -p /etc/onearth/vector-styles/v1.0/
 # Copy OnEarth configs from S3 or from local samples
 if [ -z "$S3_CONFIGS" ]
 then
-  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
+  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, checking for local configs" >> /var/log/onearth/config.log
 
-  # Copy sample configs
-  cp ../sample_configs/conf/* /etc/onearth/config/conf/
-  cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
-  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  # Check if configs are already mounted (local development)
+  # Look for any YAML endpoint config to detect local setup
+  LOCAL_CONFIGS=$(find /etc/onearth/config/endpoint/ -name "*.yaml" 2>/dev/null | head -1)
+  if [ -z "$LOCAL_CONFIGS" ]; then
+    echo "[$(date)] No local configs detected, using sample data" >> /var/log/onearth/config.log
+    # Copy sample configs
+    cp ../sample_configs/conf/* /etc/onearth/config/conf/
+    cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+    cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  else
+    echo "[$(date)] Local configs detected, skipping sample config copy" >> /var/log/onearth/config.log
+    # Only copy conf files if they don't exist (needed for tilematrixsets.xml, etc.)
+    find ../sample_configs/conf/ -name "*.xml" -exec sh -c 'test ! -f "/etc/onearth/config/conf/$(basename "$1")" && cp "$1" "/etc/onearth/config/conf/"' _ {} \;
+  fi
   cp ../sample_configs/empty_tiles/* /etc/onearth/empty_tiles/
   cp -R ../sample_configs/colormaps/* /etc/onearth/colormaps/
   cp -R ../sample_configs/legends/* /etc/onearth/legends/
@@ -202,7 +212,7 @@ ln -s /etc/onearth/vector-metadata /var/www/html/
 # Link vector-styles
 ln -s /etc/onearth/vector-styles /var/www/html/
 
-# Copy in oe-status endpoint configuration
+# Copy in oe-status endpoint configuration (always needed for healthcheck)
 cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 # Data for oe-status
@@ -211,6 +221,7 @@ mkdir -p /onearth/idx/oe-status/Raster_Status
 mkdir -p /onearth/layers/oe-status/Raster_Status
 cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 cp ../oe-status/data/*.idx /onearth/idx/oe-status/Raster_Status/
+cp ../oe-status/data/*.mrf /onearth/layers/oe-status/Raster_Status/
 cp ../oe-status/data/*.pjg /onearth/layers/oe-status/Raster_Status/
 
 # Create internal endpoint directories for WMTS and TWMS endpoints and configure WMTS
