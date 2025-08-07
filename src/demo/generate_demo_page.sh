@@ -337,7 +337,7 @@ __TWMS_ENDPOINTS_HTML__
                                 } else if (projection === 'epsg3031') {
                                         wmsUrl = `/wms/${projection}/${variant}/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=${layerId}&CRS=EPSG:3031&STYLES=&WIDTH=512&HEIGHT=512&BBOX=-4194300,-4194300,4194300,4194300`;
                                 } else {
-                                        wmsUrl = `/wms/${projection}/${variant}/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=${layerId}&CRS=EPSG:4326&STYLES=&WIDTH=512&HEIGHT=512&BBOX=-90,-180,90,180`;
+                                        wmsUrl = `/wms/${projection}/${variant}/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=${layerId}&CRS=EPSG:4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-90,-180,90,180`;
                                 }
                                 
                                 // Build TWMS URL based on projection
