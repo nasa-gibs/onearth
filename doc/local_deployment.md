@@ -2,16 +2,6 @@
 
 This documentation describes how to deploy OnEarth locally using your own MRF (Meta Raster Format) data archive.
 
-## Overview
-
-OnEarth supports multiple deployment patterns for serving imagery data:
-
-1. **Single Projection Deployment**: Serve data from one projection (e.g., EPSG:4326 only)
-2. **Multi-Projection Deployment**: Serve data from multiple projections using pre-generated MRF files for each projection
-3. **Reproject Service Deployment**: On-the-fly reprojection from a source projection to other projections
-
-This documentation focuses on approaches 1 and 2, where MRF data is organized by projection.
-
 ## Local Deployment Components
 
 The local deployment system consists of the following components located in `docker/local-deployment/`:
@@ -25,8 +15,8 @@ The local deployment system consists of the following components located in `doc
 
 The deployment uses configurable directory names within `docker/local-deployment/`:
 
-- **MRF Archive Directory** (default: `docker/local-deployment/local-mrf-archive`): Contains MRF data organized by projection
-- **Source Config Directory** (default: `docker/local-deployment/downloaded-onearth-configs`): Contains source layer configurations
+- **MRF Archive Directory** (default: `docker/local-deployment/local-mrf-archive`): Contains MRF data organized by projection (supplied by the user)
+- **Source Config Directory** (default: `docker/local-deployment/downloaded-onearth-configs`): Contains source layer configurations (supplied by the user)
 - **Target Config Directory** (default: `docker/local-deployment/onearth-configs`): Generated local configurations
 
 ```
@@ -97,7 +87,7 @@ The script performs the following operations:
 # Generate configurations for specific projections
 ./generate-configs.sh epsg4326 epsg3857
 
-# Use custom directory names
+# Use custom directory paths
 ./generate-configs.sh -m custom-mrf-dir -s source-configs -t target-configs epsg4326
 
 # Command line options
@@ -153,13 +143,8 @@ Deploy OnEarth services using the setup script:
 ### Automatic Configuration Updates
 
 The configuration generation script automatically updates layer configurations with:
-- `data_file_uri: 'file:///onearth/archive/{projection}'`
+- `data_file_uri: '/onearth/archive/{projection}'`
 - `idx_path: /onearth/idx/{projection}`
-
-Manual adjustments may be required for:
-- `bbox` - Coordinate bounds for the projection
-- `size_x`, `size_y` - Dimensions matching MRF data
-- `tilematrixset` - Appropriate tile matrix set for the projection
 
 ## Deployed Services
 
@@ -186,13 +171,13 @@ Test deployed services using the following endpoints:
 
 ```bash
 # WMTS GetCapabilities
-curl 'http://localhost:8081/wmts/{PROJECTION}/1.0.0/WMTSCapabilities.xml'
+curl 'http://localhost/wmts/{PROJECTION}/1.0.0/WMTSCapabilities.xml'
 
 # WMTS tile request
-curl 'http://localhost:8081/wmts/{PROJECTION}/1.0.0/{LAYER_ID}/default/{TIME}/{TILEMATRIXSET}/{Z}/{Y}/{X}.jpg'
+curl 'http://localhost/wmts/{PROJECTION}/1.0.0/{LAYER_ID}/default/{TIME}/{TILEMATRIXSET}/{Z}/{Y}/{X}.jpg'
 
 # WMS GetCapabilities
-curl 'http://localhost:8443/wms/{PROJECTION}?SERVICE=WMS&REQUEST=GetCapabilities'
+curl 'http://localhost/wms/{PROJECTION}?SERVICE=WMS&REQUEST=GetCapabilities'
 
 # Interactive demo page
 http://localhost/demo/

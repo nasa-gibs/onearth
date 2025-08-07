@@ -372,7 +372,7 @@ for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
 done
 echo ""
 echo "   💡 Key updates made automatically:"
-echo "      - data_file_uri: file:///onearth/archive/{projection}" 
+echo "      - data_file_uri: '/onearth/archive/{projection}'" 
 echo "      - idx_path: /onearth/idx/{projection}"
 echo "   💡 You may need to adjust:"
 echo "      - bbox: (coordinate bounds for the projection)"
