@@ -48,6 +48,10 @@ RUN make && make install
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2/onearth
 WORKDIR /home/oe2/onearth
+
+# Remove dependency that conflicts with older version in OnEarth requirements.txt
+RUN dnf remove -y python3-dateutil
+
 COPY requirements.txt .
 
 # Install pip dependencies
