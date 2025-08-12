@@ -86,6 +86,9 @@ RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
+# Remove dependency that conflicts with older version in OnEarth requirements.txt
+RUN dnf remove -y python3-dateutil
+
 # Install pip dependencies
 RUN pip install -r onearth/docker/deps/requirements.txt
 RUN pip install -r onearth/requirements.txt
