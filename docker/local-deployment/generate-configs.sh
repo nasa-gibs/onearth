@@ -117,7 +117,7 @@ create_endpoint_configs() {
     mkdir -p "$TARGET_CONFIG_DIR/config/endpoint"
     
     # Check if base template exists
-    local base_template="templates/endpoint/${projection}_template.yaml"
+    local base_template="$DEPLOYMENT_DIR/templates/endpoint/${projection}_template.yaml"
     if [ ! -f "$base_template" ]; then
         echo "   ⚠️  No base template found for $projection, you'll need to create endpoint configs manually"
         return
@@ -142,7 +142,7 @@ create_variant_headers() {
     echo "📄 Creating variant-specific mapserver headers for $projection..."
     
     # Check if base header exists
-    local base_header="docker/sample_configs/mapserver/${projection}.header"
+    local base_header="$PROJECT_ROOT/docker/sample_configs/mapserver/${projection}.header"
     if [ ! -f "$base_header" ]; then
         echo "   ⚠️  No base header found for $projection"
         return
@@ -183,8 +183,8 @@ copy_projection_configs() {
     
     # Copy essential mapserver files (symbols.sym and fonts.txt) - only once
     if [ ! -f "$TARGET_CONFIG_DIR/config/mapserver/symbols.sym" ]; then
-        if [ -f "docker/wms_service/symbols.sym" ]; then
-            cp "docker/wms_service/symbols.sym" "$TARGET_CONFIG_DIR/config/mapserver/"
+        if [ -f "$PROJECT_ROOT/docker/wms_service/symbols.sym" ]; then
+            cp "$PROJECT_ROOT/docker/wms_service/symbols.sym" "$TARGET_CONFIG_DIR/config/mapserver/"
             echo "   ✅ Copied symbols.sym"
         else
             echo "   ⚠️  symbols.sym not found in docker/wms_service/"
@@ -192,8 +192,8 @@ copy_projection_configs() {
     fi
     
     if [ ! -f "$TARGET_CONFIG_DIR/config/mapserver/fonts.txt" ]; then
-        if [ -f "docker/wms_service/fonts.txt" ]; then
-            cp "docker/wms_service/fonts.txt" "$TARGET_CONFIG_DIR/config/mapserver/"
+        if [ -f "$PROJECT_ROOT/docker/wms_service/fonts.txt" ]; then
+            cp "$PROJECT_ROOT/docker/wms_service/fonts.txt" "$TARGET_CONFIG_DIR/config/mapserver/"
             echo "   ✅ Copied fonts.txt"
         else
             echo "   ⚠️  fonts.txt not found in docker/wms_service/"
@@ -207,8 +207,8 @@ copy_projection_configs() {
     
     # Copy tilematrixsetlimits.xml (shared configuration file) - only copy once
     if [ ! -f "$TARGET_CONFIG_DIR/config/conf/tilematrixsetlimits.xml" ]; then
-        if [ -f "src/modules/gc_service/conf/tilematrixsetlimits.xml" ]; then
-            cp "src/modules/gc_service/conf/tilematrixsetlimits.xml" "$TARGET_CONFIG_DIR/config/conf/"
+        if [ -f "$PROJECT_ROOT/src/modules/gc_service/conf/tilematrixsetlimits.xml" ]; then
+            cp "$PROJECT_ROOT/src/modules/gc_service/conf/tilematrixsetlimits.xml" "$TARGET_CONFIG_DIR/config/conf/"
             echo "   ✅ Copied tilematrixsetlimits.xml"
         else
             echo "   ⚠️  tilematrixsetlimits.xml not found in src/modules/gc_service/conf/"
@@ -217,11 +217,11 @@ copy_projection_configs() {
     
     # Copy tilematrixsets.xml (if it exists) - only copy once
     if [ ! -f "$TARGET_CONFIG_DIR/config/conf/tilematrixsets.xml" ]; then
-        if [ -f "src/modules/gc_service/conf/tilematrixsets.xml" ]; then
-            cp "src/modules/gc_service/conf/tilematrixsets.xml" "$TARGET_CONFIG_DIR/config/conf/"
+        if [ -f "$PROJECT_ROOT/src/modules/gc_service/conf/tilematrixsets.xml" ]; then
+            cp "$PROJECT_ROOT/src/modules/gc_service/conf/tilematrixsets.xml" "$TARGET_CONFIG_DIR/config/conf/"
             echo "   ✅ Copied tilematrixsets.xml"
         elif [ -f "docker/sample_configs/conf/tilematrixsets.xml" ]; then
-            cp "docker/sample_configs/conf/tilematrixsets.xml" "$TARGET_CONFIG_DIR/config/conf/"
+            cp "$PROJECT_ROOT/docker/sample_configs/conf/tilematrixsets.xml" "$TARGET_CONFIG_DIR/config/conf/"
             echo "   ✅ Copied tilematrixsets.xml from sample configs"
         else
             echo "   ⚠️  tilematrixsets.xml not found"
@@ -230,7 +230,7 @@ copy_projection_configs() {
     
     # Copy and rename endpoint-specific headers
     for header_type in "header_gc" "header_gts" "header_twms_gc"; do
-        source_file="docker/sample_configs/conf/${projection}_all_${header_type}.xml"
+        source_file="$PROJECT_ROOT/docker/sample_configs/conf/${projection}_all_${header_type}.xml"
         dest_file="$TARGET_CONFIG_DIR/config/conf/${projection}_${header_type}.xml"
         
         if [ -f "$source_file" ]; then
@@ -286,15 +286,15 @@ copy_oe_status_configs() {
     echo "🩺 Setting up oe-status endpoint for WMS healthcheck..."
     
     # Copy oe-status endpoint configurations
-    if [ -f "docker/oe-status/endpoint/oe-status.yaml" ]; then
-        cp "docker/oe-status/endpoint/oe-status.yaml" "$TARGET_CONFIG_DIR/config/endpoint/"
+    if [ -f "$PROJECT_ROOT/docker/oe-status/endpoint/oe-status.yaml" ]; then
+        cp "$PROJECT_ROOT/docker/oe-status/endpoint/oe-status.yaml" "$TARGET_CONFIG_DIR/config/endpoint/"
         echo "   ✅ Copied oe-status.yaml"
     else
         echo "   ⚠️  oe-status.yaml not found in docker/oe-status/endpoint/"
     fi
     
-    if [ -f "docker/oe-status/endpoint/oe-status_reproject.yaml" ]; then
-        cp "docker/oe-status/endpoint/oe-status_reproject.yaml" "$TARGET_CONFIG_DIR/config/endpoint/"
+    if [ -f "$PROJECT_ROOT/docker/oe-status/endpoint/oe-status_reproject.yaml" ]; then
+        cp "$PROJECT_ROOT/docker/oe-status/endpoint/oe-status_reproject.yaml" "$TARGET_CONFIG_DIR/config/endpoint/"
         echo "   ✅ Copied oe-status_reproject.yaml"
     else
         echo "   ⚠️  oe-status_reproject.yaml not found in docker/oe-status/endpoint/"
@@ -302,8 +302,8 @@ copy_oe_status_configs() {
     
     # Copy oe-status layer configurations
     mkdir -p "$TARGET_CONFIG_DIR/config/layers/oe-status"
-    if [ -d "docker/oe-status/layers" ]; then
-        cp -r "docker/oe-status/layers/"* "$TARGET_CONFIG_DIR/config/layers/oe-status/" 2>/dev/null || true
+    if [ -d "$PROJECT_ROOT/docker/oe-status/layers" ]; then
+        cp -r "$PROJECT_ROOT/docker/oe-status/layers/"* "$TARGET_CONFIG_DIR/config/layers/oe-status/" 2>/dev/null || true
         layer_count=$(find "$TARGET_CONFIG_DIR/config/layers/oe-status" -name "*.yaml" -type f | wc -l)
         echo "   ✅ Copied $layer_count oe-status layer config(s)"
     else
@@ -311,8 +311,8 @@ copy_oe_status_configs() {
     fi
     
     # Copy oe-status mapserver header
-    if [ -f "docker/oe-status/mapserver/oe-status_reproject.header" ]; then
-        cp "docker/oe-status/mapserver/oe-status_reproject.header" "$TARGET_CONFIG_DIR/config/mapserver/"
+    if [ -f "$PROJECT_ROOT/docker/oe-status/mapserver/oe-status_reproject.header" ]; then
+        cp "$PROJECT_ROOT/docker/oe-status/mapserver/oe-status_reproject.header" "$TARGET_CONFIG_DIR/config/mapserver/"
         echo "   ✅ Copied oe-status_reproject.header"
     else
         echo "   ⚠️  oe-status_reproject.header not found"
