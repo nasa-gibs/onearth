@@ -314,7 +314,7 @@ __TWMS_ENDPOINTS_HTML__
                                 // Extract format
                                 const formatElements = layer.getElementsByTagName("Format");
                                 if (formatElements.length === 0) continue;
-                                const format = formatElements[0].textContent.replace('image/', '');
+                                const format = formatElements[0].textContent.replace('image/', '').replace('application/vnd.mapbox-vector-tile', 'mvt');
                                 
                                 // Extract tile matrix set
                                 const tmsElements = layer.getElementsByTagName("TileMatrixSetLink");
