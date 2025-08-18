@@ -56,13 +56,15 @@ local-mrf-archive/
 └── ...
 ```
 
-### Step 2: Source Configuration Preparation (Optional)
+### Step 2: Source Configuration Preparation
 
 If existing OnEarth layer configurations are available (e.g., from AWS deployment), place them in:
 
 ```
 downloaded-onearth-configs/config/layers/PROJECTION/LAYER_NAME.yaml
 ```
+
+Otherwise, you will need to manually create the layer configuration files and place them in the appropriate directories following Step 3. See [configuration.md](./configuration.md) for more information on creating layer configuration files.
 
 ### Step 3: Configuration Generation
 
