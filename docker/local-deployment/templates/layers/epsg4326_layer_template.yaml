@@ -11,7 +11,7 @@ projection: EPSG:4326
 source_mrf:
   bands: 3
   bbox: -180,-90,180,90  # Geographic bounds
-  data_file_uri: 'file:///onearth/archive/epsg4326'
+  data_file_uri: '/onearth/mrf-archive/epsg4326'
   empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
   idx_path: /onearth/idx/epsg4326
   size_x: {SIZE_X}     # Depends on your data - typically 2^n * tile_size

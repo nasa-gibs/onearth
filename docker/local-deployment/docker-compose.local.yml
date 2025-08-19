@@ -30,14 +30,14 @@ services:
         - nasagibs/onearth-time-service:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     environment: 
       DEBUG_LOGGING: $DEBUG_LOGGING
-      S3_URL: /onearth/archive
+      S3_URL: /onearth/mrf-archive
       FORCE_TIME_SCRAPE: true
     networks:
       - oe2
     restart: always
     volumes:
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
-      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
   onearth-tile-services:
     container_name: onearth-tile-services
     hostname: onearth-tile-services
@@ -59,12 +59,12 @@ services:
       USE_SSL: $USE_SSL
       SERVER_NAME: $SERVER_NAME
       DEBUG_LOGGING: $DEBUG_LOGGING
-      S3_URL: /onearth/archive
+      S3_URL: /onearth/mrf-archive
       IDX_SYNC: true
     volumes: 
       - ./certs:/home/oe2/onearth/certs
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
-      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
     networks:
       - oe2
     restart: always
@@ -92,7 +92,7 @@ services:
     restart: always
     volumes:
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
-      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
   onearth-reproject:
     container_name: onearth-reproject
     hostname: onearth-reproject
@@ -123,7 +123,7 @@ services:
     restart: always
     volumes:
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
-      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
   onearth-wms:
     container_name: onearth-wms
     hostname: onearth-wms
@@ -154,7 +154,7 @@ services:
     volumes: 
       - ./certs:/home/oe2/onearth/certs
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
-      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
     networks:
       - oe2
     restart: always
@@ -185,7 +185,7 @@ services:
       DEBUG_LOGGING: $DEBUG_LOGGING
     volumes:
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config:ro
-      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/archive:ro
+      - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
     networks:
       - oe2
     restart: always

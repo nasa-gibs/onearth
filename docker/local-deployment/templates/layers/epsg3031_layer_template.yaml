@@ -11,7 +11,7 @@ projection: EPSG:3031
 source_mrf:
   bands: 3
   bbox: -4194304,-4194304,4194304,4194304  # Antarctic Polar Stereographic bounds (adjust as needed)
-  data_file_uri: 'file:///onearth/archive/epsg3031'
+  data_file_uri: '/onearth/mrf-archive/epsg3031'
   empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
   idx_path: /onearth/idx/epsg3031
   size_x: {SIZE_X}     # Depends on your data - typically 2^n * tile_size

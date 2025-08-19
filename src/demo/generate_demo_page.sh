@@ -117,7 +117,7 @@ generate_demo_page() {
     PROJECTIONS_LIST=$(echo "$PROJECTIONS" | tr ' ' ',')
     GENERATION_TIME=$(date)
     CONFIG_DIR_DISPLAY="${CONFIG_DIR:-Not mounted}"
-    MRF_ARCHIVE_DISPLAY="/onearth/archive"
+    MRF_ARCHIVE_DISPLAY="/onearth/mrf-archive"
     
     # Get OnEarth version information
     ONEARTH_VERSION_INFO="Unknown"

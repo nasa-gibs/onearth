@@ -153,7 +153,7 @@ If you've made code changes to any of the images, you will need to run `./setup-
 ### Automatic Configuration Updates
 
 The configuration generation script automatically updates layer configurations with:
-- `data_file_uri: '/onearth/archive/{projection}'`
+- `data_file_uri: '/onearth/mrf-archive/{projection}'`
 - `idx_path: /onearth/idx/{projection}`
 
 ## Deployed Services
@@ -170,7 +170,7 @@ The local deployment creates the following Docker services:
 ### Volume Mounts
 
 Docker containers mount the following volumes:
-- MRF archive directory → `/onearth/archive` (read-only)
+- MRF archive directory → `/onearth/mrf-archive` (read-only)
 - Configuration directory → `/etc/onearth/config` (read-only)
 
 ## Testing Deployment

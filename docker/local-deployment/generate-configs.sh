@@ -258,9 +258,9 @@ create_layer_structure() {
         # Update paths in copied configs
         find "$TARGET_CONFIG_DIR/config/layers/$projection" -name "*.yaml" -type f | while read -r config_file; do
             # Update data_file_uri to point to local archive (use direct path, not file:// URI)
-            sed -i.bak "s|data_file_uri:[[:space:]]*['\"]\?.*$projection\(.*\)|data_file_uri: '/onearth/archive/$projection\1'|g" "$config_file"
+            sed -E -i.bak "s|^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?[^'\"]*/$projection([^'\"]*)['\"]?([[:space:]]*#.*)?$|\1'/onearth/mrf-archive/$projection\2'\3|" "$config_file"
             # Update idx_path
-            sed -i.bak "s|idx_path:[[:space:]]*.*$projection\(.*\)|idx_path: /onearth/idx/$projection\1|g" "$config_file"
+            sed -E -i.bak "s|^([[:space:]]*idx_path:[[:space:]]*).*/$projection(.*)$|\1/onearth/idx/$projection\2|" "$config_file"
             # Remove backup files
             rm -f "$config_file.bak"
         done
@@ -372,7 +372,7 @@ for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
 done
 echo ""
 echo "   💡 Key updates made automatically:"
-echo "      - data_file_uri: '/onearth/archive/{projection}'" 
+echo "      - data_file_uri: '/onearth/mrf-archive/{projection}'" 
 echo "      - idx_path: /onearth/idx/{projection}"
 echo "   💡 You may need to adjust:"
 echo "      - bbox: (coordinate bounds for the projection)"
