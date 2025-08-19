@@ -31,6 +31,9 @@ The generated demo page includes:
 - **Expandable layer lists** with links to example requests for each layer
 - **Service status endpoints** for health checking
 - **Setup information** showing your OnEarth version and configuration paths
+- **Functional OpenLayers demo** for the "all" endpoint
+  - Enabled layers display imagery associated with their default (latest available) date by default
+  - Using the time-picker in the bottom left corner will display imagery associated with the chosen date (if available)
 
 ### Key Differences
 
