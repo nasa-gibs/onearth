@@ -258,9 +258,9 @@ create_layer_structure() {
         # Update paths in copied configs
         find "$TARGET_CONFIG_DIR/config/layers/$projection" -name "*.yaml" -type f | while read -r config_file; do
             # Update data_file_uri to point to local archive (use direct path, not file:// URI)
-            sed -i.bak "s|data_file_uri:.*|data_file_uri: '/onearth/archive/$projection'|g" "$config_file"
-            # Update idx_path
-            sed -i.bak "s|idx_path:.*|idx_path: /onearth/idx/$projection|g" "$config_file"
+            sed -i.bak "s|data_file_uri:[[:space:]]*['\"]\?.*$projection\(.*\)|data_file_uri: '/onearth/archive/$projection\1'|g" "$config_file"
+            # Update idx_path FIX THIS PART FOR DELIBERATELY SPECIFIED ONES
+            sed -i.bak "s|idx_path:[[:space:]]*.*$projection\(.*\)|idx_path: /onearth/idx/$projection\1|g" "$config_file"
             # Remove backup files
             rm -f "$config_file.bak"
         done
