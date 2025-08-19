@@ -32,8 +32,8 @@ window.onload = function() {
     var vectorLayers = [];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "/wmts/epsg4326/best/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml";
+    var endpointUrl = "/wmts/epsg4326/all/wmts.cgi?";
+    var getCapabilitiesLocation = "/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.

@@ -32,8 +32,8 @@ window.onload = function() {
     var vectorLayers = ["MODIS_C5_fires", "oscar", "ASCATA-L2-25km", "Terra_Orbit_Dsc_Dots"];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "/wmts/epsg3857/best/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml";
+    var endpointUrl = "/wmts/epsg3857/all/wmts.cgi?";
+    var getCapabilitiesLocation = "/wmts/epsg3857/all/1.0.0/WMTSCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.

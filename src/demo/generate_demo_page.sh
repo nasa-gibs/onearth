@@ -168,7 +168,7 @@ generate_demo_page() {
                 <hr>
 
                 <h2>🗺️ OpenLayers Demo Endpoints</h2>
-                <p>Interactive maps with OpenLayers for testing WMTS endpoints:</p>
+                <p>Interactive maps with OpenLayers for testing WMTS "all" endpoints:</p>
                 <p><a href="/demo/wmts/epsg4326/" class="btn btn-sm btn-primary">EPSG:4326 Demo</a></p>
                 <p><a href="/demo/wmts/epsg3857/" class="btn btn-sm btn-primary">EPSG:3857 Demo</a></p>
                 <p><a href="/demo/wmts/epsg3413/" class="btn btn-sm btn-primary">EPSG:3413 Demo</a></p>
