@@ -114,11 +114,11 @@ Deploy OnEarth services using the setup script:
 #### Deployment Options
 
 ```bash
-# Basic deployment (builds missing images only)
+# Basic deployment (builds missing images only).
 ./setup-onearth-local.sh
 
 # Force rebuild all images
-./setup-onearth-local.sh --build
+./setup-onearth-local.sh --force-build-all
 
 # Rebuild specific services
 ./setup-onearth-local.sh --service "tile-services capabilities"
@@ -129,6 +129,13 @@ Deploy OnEarth services using the setup script:
 # Complete environment teardown
 ./setup-onearth-local.sh --teardown
 ```
+
+#### Updating Containers after Configuration or Code Changes
+
+If you've only made changes to the configuration files, running `./setup-onearth-local.sh` will stop the existing containers and start up new containers that are configured using the latest versions of the configuration files.
+
+If you've made code changes to any of the images, you will need to run `./setup-onearth-local.sh --force-build-all` or `./setup-onearth-local.sh --service "<service name(s)>"` so that new images are built with the latest code changes before the new containers start up.
+
 
 **Available command line options:**
 - `-m, --mrf-archive DIR` - MRF archive directory
