@@ -136,6 +136,7 @@ If you've only made changes to the configuration files, running `./setup-onearth
 
 If you've made code changes to any of the images, you will need to run `./setup-onearth-local.sh --force-build-all` or `./setup-onearth-local.sh --service "<service name(s)>"` so that new images are built with the latest code changes before the new containers start up.
 
+Note: the OpenLayers Demo Endpoints (such as at http://localhost/demo/wmts/epsg4326/) tend to be cached by the browser, so updates to layer configurations may not immediately appear without clearing your browser's cache.
 
 **Available command line options:**
 - `-m, --mrf-archive DIR` - MRF archive directory
