@@ -16,6 +16,7 @@ The local deployment system consists of the following components located in `doc
 The deployment uses configurable directory names within `docker/local-deployment/`:
 
 - **MRF Archive Directory** (default: `docker/local-deployment/local-mrf-archive`): Contains MRF data organized by projection (supplied by the user)
+- **Shapefile Archive Directory** (default: `docker/local-deployment/local-shp-archive`): Contains shapefile data organized by projection (supplied by the user)
 - **Source Config Directory** (default: `docker/local-deployment/downloaded-onearth-configs`): Contains source layer configurations (supplied by the user)
 - **Target Config Directory** (default: `docker/local-deployment/onearth-configs`): Generated local configurations
 
@@ -56,6 +57,21 @@ local-mrf-archive/
 └── ...
 ```
 
+Organize shapefiles by projection within the shapefile archive directory (if you intend to serve vectors via WMS):
+
+```
+local-shp-archive/
+├── epsg4326/
+│   └── LAYER_NAME/
+│       └── 2024/
+│           ├── LAYER_NAME-2024001000000.shp
+│           ├── LAYER_NAME-2024001000000.dbf
+│           ├── LAYER_NAME-2024001000000.prj
+│           └── LAYER_NAME-2024001000000.shx
+├── epsg3857/
+└── ...
+```
+
 ### Step 2: Source Configuration Preparation
 
 If existing OnEarth layer configurations are available (e.g., from AWS deployment), place them in:
@@ -90,10 +106,11 @@ The script performs the following operations:
 ./generate-configs.sh epsg4326 epsg3857
 
 # Use custom directory paths
-./generate-configs.sh -m custom-mrf-dir -s source-configs -t target-configs epsg4326
+./generate-configs.sh -m custom-mrf-dir -p custom-shp-dir -s source-configs -t target-configs epsg4326
 
 # Command line options
 -m, --mrf-archive DIR     MRF archive directory (default: local-mrf-archive)
+-p, --shp-archive DIR     Shapefile archive directory (default: local-shp-archive)
 -s, --source-config DIR   Source config directory (default: downloaded-onearth-configs)
 -t, --target-config DIR   Target config directory (default: onearth-configs)
 -h, --help               Show help message
@@ -124,7 +141,7 @@ Deploy OnEarth services using the setup script:
 ./setup-onearth-local.sh --service "tile-services capabilities"
 
 # Use custom directories
-./setup-onearth-local.sh -m custom-mrf-dir -c target-configs
+./setup-onearth-local.sh -m custom-mrf-dir -p custom-shp-dir -c target-configs
 
 # Complete environment teardown
 ./setup-onearth-local.sh --teardown
@@ -140,6 +157,7 @@ If you've made code changes to any of the images, you will need to run `./setup-
 
 **Available command line options:**
 - `-m, --mrf-archive DIR` - MRF archive directory
+- `-p, --shp-archive DIR` - Shapefile archive directory
 - `-c, --config DIR` - Configuration directory
 - `-b, --build` - Force rebuild all Docker images
 - `--build-deps` - Rebuild only base dependencies
@@ -154,6 +172,7 @@ If you've made code changes to any of the images, you will need to run `./setup-
 
 The configuration generation script automatically updates layer configurations with:
 - `data_file_uri: '/onearth/mrf-archive/{projection}'`
+- `data_file_uri: '/onearth/shp-archive/{projection}'`
 - `idx_path: /onearth/idx/{projection}`
 
 ## Deployed Services
@@ -171,6 +190,7 @@ The local deployment creates the following Docker services:
 
 Docker containers mount the following volumes:
 - MRF archive directory → `/onearth/mrf-archive` (read-only)
+- Shapefile archive directory → `/onearth/shp-archive` (read-only)
 - Configuration directory → `/etc/onearth/config` (read-only)
 
 ## Testing Deployment

@@ -27,8 +27,10 @@ fi
 
 # Set default directory paths (always relative to deployment directory)
 DEFAULT_MRF_ARCHIVE_DIR="$DEPLOYMENT_DIR/local-mrf-archive"
+DEFAULT_SHP_ARCHIVE_DIR="$DEPLOYMENT_DIR/local-shp-archive"
 DEFAULT_CONFIG_DIR="$DEPLOYMENT_DIR/onearth-configs"
 MRF_ARCHIVE_DIR="${MRF_ARCHIVE_DIR:-local-mrf-archive}"
+SHP_ARCHIVE_DIR="${SHP_ARCHIVE_DIR:-local-shp-archive}"
 CONFIG_DIR="${CONFIG_DIR:-onearth-configs}"
 
 # Parse command line arguments
@@ -37,6 +39,7 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  -m, --mrf-archive DIR     MRF archive directory (default: local-mrf-archive)"
+    echo "  -p, --shp-archive DIR     SHP archive directory (default: local-shp-archive)"
     echo "  -c, --config DIR          Configuration directory (default: onearth-configs)"
     echo "  -b, --force-build-all     Force rebuild all Docker images"
     echo "  --build-deps              Force rebuild only dependencies (onearth-deps)"
@@ -81,6 +84,10 @@ while [[ $# -gt 0 ]]; do
             MRF_ARCHIVE_DIR="$2"
             shift 2
             ;;
+        -p|--shp-archive)
+            SHP_ARCHIVE_DIR="$2"
+            shift 2
+            ;;
         -c|--config)
             CONFIG_DIR="$2"
             shift 2
@@ -122,6 +129,9 @@ done
 # Resolve directory paths - if using defaults, use absolute paths
 if [ "$MRF_ARCHIVE_DIR" = "local-mrf-archive" ]; then
     MRF_ARCHIVE_DIR="$DEFAULT_MRF_ARCHIVE_DIR"
+fi
+if [ "$SHP_ARCHIVE_DIR" = "local-shp-archive" ]; then
+    SHP_ARCHIVE_DIR="$DEFAULT_SHP_ARCHIVE_DIR"
 fi
 if [ "$CONFIG_DIR" = "onearth-configs" ]; then
     CONFIG_DIR="$DEFAULT_CONFIG_DIR"
@@ -174,6 +184,7 @@ echo "=========================================="
 echo ""
 echo "📁 Using directories:"
 echo "   MRF Archive: $MRF_ARCHIVE_DIR"
+echo "   SHP Archive: $SHP_ARCHIVE_DIR"
 echo "   Configurations: $CONFIG_DIR"
 echo ""
 
@@ -190,6 +201,12 @@ if [ ! -d "$MRF_ARCHIVE_DIR" ]; then
     exit 1
 fi
 
+if [ ! -d "$SHP_ARCHIVE_DIR" ]; then
+    echo "⚠️ Warning: $SHP_ARCHIVE_DIR directory not found"
+    echo "   Please that $SHP_ARCHIVE_DIR exists or specify a different directory with -p if you intend to serve vectors via WMS, otherwise this will be ignored."
+    echo ""
+fi
+
 if [ ! -d "$CONFIG_DIR" ]; then
     echo "❌ Error: $CONFIG_DIR directory not found"
     echo "   Please run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
@@ -198,6 +215,11 @@ fi
 
 echo "✅ Docker is running"
 echo "✅ Local MRF archive found"
+if [ ! -d "$SHP_ARCHIVE_DIR" ]; then
+    echo "⚠️ Local SHP archive not found, vectors will not be served via WMS"
+else
+    echo "✅ Local SHP archive found"
+fi
 echo "✅ Local OnEarth configs found"
 
 # Validate service names if specified
@@ -228,6 +250,7 @@ export USE_SSL=false  # Disable SSL for local development
 export SERVER_NAME=localhost
 export DEBUG_LOGGING=true  # Enable debug logging for local development
 export MRF_ARCHIVE_DIR  # Export for docker-compose to use
+export SHP_ARCHIVE_DIR  # Export for docker-compose to use
 export CONFIG_DIR  # Export for docker-compose to use
 export ONEARTH_DEPS_TAG=nasagibs/onearth-deps:${ONEARTH_VERSION}
 export START_ONEARTH_TOOLS_CONTAINER=0
@@ -238,6 +261,7 @@ echo "   USE_SSL: $USE_SSL"
 echo "   SERVER_NAME: $SERVER_NAME"
 echo "   DEBUG_LOGGING: $DEBUG_LOGGING"
 echo "   MRF_ARCHIVE_DIR: $MRF_ARCHIVE_DIR"
+echo "   SHP_ARCHIVE_DIR: $SHP_ARCHIVE_DIR"
 
 # Discover available projections from MRF archive
 echo "🔍 Discovering available projections..."
@@ -274,7 +298,7 @@ fi
 if [ ${#ENDPOINTS[@]} -eq 0 ]; then
     echo "❌ Error: No endpoint configurations found in $CONFIG_DIR/config/endpoint/"
     echo "   Please create endpoint YAML files for each projection you want to serve"
-    echo "   Run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
+    echo "   Run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -p $SHP_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
     exit 1
 fi
 
@@ -460,9 +484,9 @@ echo "🔍 If you encounter issues:"
 echo "   1. Check OnEarth config logs: docker exec [service-name] cat /var/log/onearth/config.log"
 echo "   2. Check Apache error logs: docker exec [service-name] cat /var/log/httpd/error_log"
 echo "   3. Check WMS MapServer logs: docker exec onearth-wms cat /var/log/mapserver/error.log"
-echo "   2. Verify MRF files are accessible in $MRF_ARCHIVE_DIR/{projection}/"
-echo "   3. Ensure layer configs exist in $CONFIG_DIR/config/layers/{projection}/"
-echo "   4. Run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
+echo "   4. Verify MRF files are accessible in $MRF_ARCHIVE_DIR/{projection}/"
+echo "   5. Ensure layer configs exist in $CONFIG_DIR/config/layers/{projection}/"
+echo "   6. Run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -p $SHP_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
 echo ""
 
 echo "🚀 Quick validation:"

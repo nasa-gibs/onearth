@@ -5,6 +5,7 @@ build
 /dist/
 /docker/el9/rpms/
 /docker/local-deployment/local-mrf-archive/
+/docker/local-deployment/local-shp-archive/
 /docker/local-deployment/onearth-configs/
 /docker/local-deployment/downloaded-onearth-configs/
 /src/test/*.pyc

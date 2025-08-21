@@ -24,9 +24,11 @@ fi
 
 # Set default directory paths (always relative to deployment directory)
 DEFAULT_MRF_ARCHIVE_DIR="$DEPLOYMENT_DIR/local-mrf-archive"
+DEFAULT_SHP_ARCHIVE_DIR="$DEPLOYMENT_DIR/local-shp-archive"
 DEFAULT_SOURCE_CONFIG_DIR="$DEPLOYMENT_DIR/downloaded-onearth-configs"
 DEFAULT_TARGET_CONFIG_DIR="$DEPLOYMENT_DIR/onearth-configs"
 MRF_ARCHIVE_DIR="${MRF_ARCHIVE_DIR:-local-mrf-archive}"
+SHP_ARCHIVE_DIR="${SHP_ARCHIVE_DIR:-local-shp-archive}"
 SOURCE_CONFIG_DIR="${SOURCE_CONFIG_DIR:-downloaded-onearth-configs}"
 TARGET_CONFIG_DIR="${TARGET_CONFIG_DIR:-onearth-configs}"
 
@@ -36,6 +38,7 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  -m, --mrf-archive DIR     MRF archive directory (default: local-mrf-archive)"
+    echo "  -p, --shp-archive DIR     Shapefile archive directory (default: local-shp-archive)"
     echo "  -s, --source-config DIR   Source config directory (default: downloaded-onearth-configs)"  
     echo "  -t, --target-config DIR   Target config directory (default: onearth-configs)"
     echo "  -h, --help                Show this help message"
@@ -57,6 +60,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -m|--mrf-archive)
             MRF_ARCHIVE_DIR="$2"
+            shift 2
+            ;;
+        -p|--shp-archive)
+            SHP_ARCHIVE_DIR="$2"
             shift 2
             ;;
         -s|--source-config)
@@ -85,6 +92,9 @@ done
 if [ "$MRF_ARCHIVE_DIR" = "local-mrf-archive" ]; then
     MRF_ARCHIVE_DIR="$DEFAULT_MRF_ARCHIVE_DIR"
 fi
+if [ "$SHP_ARCHIVE_DIR" = "local-shp-archive" ]; then
+    SHP_ARCHIVE_DIR="$DEFAULT_SHP_ARCHIVE_DIR"
+fi
 if [ "$SOURCE_CONFIG_DIR" = "downloaded-onearth-configs" ]; then
     SOURCE_CONFIG_DIR="$DEFAULT_SOURCE_CONFIG_DIR"
 fi
@@ -104,6 +114,7 @@ echo "=========================================="
 echo ""
 echo "📁 Using directories:"
 echo "   MRF Archive: $MRF_ARCHIVE_DIR"
+echo "   Shapefile Archive: $SHP_ARCHIVE_DIR"
 echo "   Source Configs: $SOURCE_CONFIG_DIR"
 echo "   Target Configs: $TARGET_CONFIG_DIR"
 echo ""
@@ -132,6 +143,25 @@ create_endpoint_configs() {
         sed "s/{{ENDPOINT}}/$variant/g" "$base_template" > "$endpoint_file"
         echo "   ✅ Created ${projection}_${variant}.yaml from base template"
     done
+    
+    # Create static endpoint configs for EPSG:3857 (reprojection service)
+    if [ "$projection" = "epsg3857" ]; then
+        local static_template="$DEPLOYMENT_DIR/templates/endpoint/${projection}_static_template.yaml"
+        if [ -f "$static_template" ]; then
+            echo "📝 Creating static endpoint configs for $projection..."
+            for variant in "${variants[@]}"; do
+                local static_endpoint_file="$TARGET_CONFIG_DIR/config/endpoint/${projection}_${variant}_static.yaml"
+                
+                echo "   Creating: ${projection}_${variant}_static.yaml"
+                
+                # Copy static template and substitute {{ENDPOINT}} placeholder
+                sed "s/{{ENDPOINT}}/$variant/g" "$static_template" > "$static_endpoint_file"
+                echo "   ✅ Created ${projection}_${variant}_static.yaml from static template"
+            done
+        else
+            echo "   ⚠️  No static template found for $projection"
+        fi
+    fi
 }
 
 # Function to create variant-specific mapserver headers
@@ -257,8 +287,15 @@ create_layer_structure() {
         
         # Update paths in copied configs
         find "$TARGET_CONFIG_DIR/config/layers/$projection" -name "*.yaml" -type f | while read -r config_file; do
-            # Update data_file_uri to point to local archive (use direct path, not file:// URI)
-            sed -E -i.bak "s|^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?[^'\"]*/$projection([^'\"]*)['\"]?([[:space:]]*#.*)?$|\1'/onearth/mrf-archive/$projection\2'\3|" "$config_file"
+            sed -E -i.bak "
+                /^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?\{SHAPEFILE_BUCKET\}\/$projection/ {
+                    s|^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?\{SHAPEFILE_BUCKET\}/$projection([^'\"]*)['\"]?([[:space:]]*#.*)?$|\1'/onearth/shp-archive/$projection\2'\3|
+                    b
+                }
+                /^([[:space:]]*data_file_uri:[[:space:]]*)/ {
+                    s|^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?[^'\"]*/$projection([^'\"]*)['\"]?([[:space:]]*#.*)?$|\1'/onearth/mrf-archive/$projection\2'\3|
+                }
+            " "$config_file"
             # Update idx_path
             sed -E -i.bak "s|^([[:space:]]*idx_path:[[:space:]]*).*/$projection(.*)$|\1/onearth/idx/$projection\2|" "$config_file"
             # Remove backup files
@@ -365,7 +402,18 @@ for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
 done
 echo ""
 
-echo "2. 📝 Layer configuration files:"
+echo "2. 📂 Organize your Shapefile data structure (if applicable):"
+echo "   $SHP_ARCHIVE_DIR/"
+for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
+    echo "   ├── $proj/"
+    echo "   │   ├── {LAYER_NAME_1}/"
+    echo "   │   │   └── {YEAR}/ (*.shp, *.dbf, *.prj, *.shx files)"
+    echo "   │   └── {LAYER_NAME_2}/"
+    echo "   │       └── {YEAR}/ (*.shp, *.dbf, *.prj, *.shx files)"
+done
+echo ""
+
+echo "3. 📝 Layer configuration files:"
 echo "   Layer configs have been copied from $SOURCE_CONFIG_DIR and updated for local paths:"
 for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
     echo "   • $TARGET_CONFIG_DIR/config/layers/$proj/{LAYER_NAME}.yaml"

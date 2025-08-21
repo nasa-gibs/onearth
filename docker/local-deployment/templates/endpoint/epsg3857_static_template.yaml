@@ -1,0 +1,18 @@
+time_service_uri: "http://onearth-time-service/time_service/time"
+time_service_keys: ["epsg3857"]
+gc_service_uri: "http://onearth-capabilities/wmts/epsg3857/{{ENDPOINT}}/gc"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+tms_limits_defs_file: "/etc/onearth/config/conf/tilematrixsetlimits.xml"
+layer_config_source: "/etc/onearth/config/layers/epsg3857/{{ENDPOINT}}/"
+apache_config_location: "/etc/httpd/conf.d/"
+base_uri_gc: "http://localhost/wmts/epsg3857/{{ENDPOINT}}/"
+base_uri_gts: "http://localhost/twms/epsg3857/{{ENDPOINT}}/"
+base_uri_meta: "http://localhost"
+epsg_code: "EPSG:3857"
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts/epsg3857/{{ENDPOINT}}"
+  external_endpoint: "/wmts/epsg3857/{{ENDPOINT}}"
+  config_prefix: "epsg3857_{{ENDPOINT}}"
+twms_service:
+  internal_endpoint: "/var/www/html/twms/epsg3857/{{ENDPOINT}}"
+  external_endpoint: "/twms/epsg3857/{{ENDPOINT}}" 

@@ -118,6 +118,7 @@ generate_demo_page() {
     GENERATION_TIME=$(date)
     CONFIG_DIR_DISPLAY="${CONFIG_DIR:-Not mounted}"
     MRF_ARCHIVE_DISPLAY="/onearth/mrf-archive"
+    SHP_ARCHIVE_DISPLAY="/onearth/shp-archive"
     
     # Get OnEarth version information
     ONEARTH_VERSION_INFO="Unknown"
@@ -269,6 +270,7 @@ __TWMS_ENDPOINTS_HTML__
                         <p><strong>OnEarth Version:</strong> __ONEARTH_VERSION_INFO__</p>
                         <p><strong>Configuration:</strong> __CONFIG_DIR_DISPLAY__</p>
                         <p><strong>MRF Archive:</strong> __MRF_ARCHIVE_DISPLAY__</p>
+                        <p><strong>SHP Archive:</strong> __SHP_ARCHIVE_DISPLAY__</p>
                         <p><strong>Available Projections:</strong> __PROJECTIONS_LIST__</p>
                         <p><strong>Total Layers:</strong> __TOTAL_LAYERS__</p>
                         <p><strong>Generated:</strong> __GENERATION_TIME__</p>
@@ -478,7 +480,7 @@ EOF
     
     # Substitute variables in the generated HTML using a temporary file approach
     # This is safer than sed when dealing with complex HTML content
-    export CONFIG_DIR_DISPLAY MRF_ARCHIVE_DISPLAY PROJECTIONS_LIST TOTAL_LAYERS GENERATION_TIME ONEARTH_VERSION_INFO
+    export CONFIG_DIR_DISPLAY MRF_ARCHIVE_DISPLAY SHP_ARCHIVE_DISPLAY PROJECTIONS_LIST TOTAL_LAYERS GENERATION_TIME ONEARTH_VERSION_INFO
     
     # Create a temporary file for the HTML content replacement
     temp_file=$(mktemp)
@@ -486,6 +488,7 @@ EOF
     # Replace simple variables with sed (safe ones)
     sed "s|__CONFIG_DIR_DISPLAY__|$CONFIG_DIR_DISPLAY|g" "$OUTPUT_FILE" > "$temp_file"
     sed -i "s|__MRF_ARCHIVE_DISPLAY__|$MRF_ARCHIVE_DISPLAY|g" "$temp_file"
+    sed -i "s|__SHP_ARCHIVE_DISPLAY__|$SHP_ARCHIVE_DISPLAY|g" "$temp_file"
     sed -i "s|__PROJECTIONS_LIST__|$PROJECTIONS_LIST|g" "$temp_file"
     sed -i "s|__TOTAL_LAYERS__|$TOTAL_LAYERS|g" "$temp_file"
     sed -i "s|__GENERATION_TIME__|$GENERATION_TIME|g" "$temp_file"
