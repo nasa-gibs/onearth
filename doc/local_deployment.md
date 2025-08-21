@@ -16,9 +16,9 @@ The local deployment system consists of the following components located in `doc
 The deployment uses configurable directory names within `docker/local-deployment/`:
 
 - **MRF Archive Directory** (default: `docker/local-deployment/local-mrf-archive`): Contains MRF data organized by projection (supplied by the user)
-- **Shapefile Archive Directory** (default: `docker/local-deployment/local-shp-archive`): Contains shapefile data organized by projection (supplied by the user)
 - **Source Config Directory** (default: `docker/local-deployment/downloaded-onearth-configs`): Contains source layer configurations (supplied by the user)
 - **Target Config Directory** (default: `docker/local-deployment/onearth-configs`): Generated local configurations
+- **Shapefile Archive Directory (Optional)** (default: `docker/local-deployment/local-shp-archive`): Contains shapefile data organized by projection (supplied by the user)
 
 ```
 docker/local-deployment/
@@ -57,7 +57,7 @@ local-mrf-archive/
 └── ...
 ```
 
-Organize shapefiles by projection within the shapefile archive directory (if you intend to serve vectors via WMS):
+If you intend to serve vectors via WMS, organize shapefiles by projection within the shapefile archive directory:
 
 ```
 local-shp-archive/
@@ -96,8 +96,8 @@ Execute the configuration generation script:
 
 The script performs the following operations:
 - Creates endpoint configurations for specified projections
-- Copies and updates layer configurations to use local file paths
-- Generates required Apache and MapServer configuration files
+- Copies layer configurations into their correct locations
+- Generates required MapServer configuration files
 
 #### Configuration Generation Options
 
@@ -106,11 +106,9 @@ The script performs the following operations:
 ./generate-configs.sh epsg4326 epsg3857
 
 # Use custom directory paths
-./generate-configs.sh -m custom-mrf-dir -p custom-shp-dir -s source-configs -t target-configs epsg4326
+./generate-configs.sh -s source-configs -t target-configs epsg4326
 
 # Command line options
--m, --mrf-archive DIR     MRF archive directory (default: local-mrf-archive)
--p, --shp-archive DIR     Shapefile archive directory (default: local-shp-archive)
 -s, --source-config DIR   Source config directory (default: downloaded-onearth-configs)
 -t, --target-config DIR   Target config directory (default: onearth-configs)
 -h, --help               Show help message

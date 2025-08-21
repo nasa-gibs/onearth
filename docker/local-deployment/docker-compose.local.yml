@@ -87,6 +87,7 @@ services:
         - nasagibs/onearth-capabilities:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     environment: 
       DEBUG_LOGGING: $DEBUG_LOGGING
+      S3_URL: /onearth/mrf-archive
     networks:
       - oe2
     restart: always
@@ -151,6 +152,7 @@ services:
       USE_SSL: $USE_SSL
       SERVER_NAME: $SERVER_NAME
       DEBUG_LOGGING: $DEBUG_LOGGING
+      SHAPEFILE_BUCKET: /onearth/shp-archive
     volumes: 
       - ./certs:/home/oe2/onearth/certs
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config

@@ -66,7 +66,7 @@ show_usage() {
     echo "  $0 --build-deps           # Only rebuild dependencies"
     echo "  $0 --service tile-services # Rebuild just tile-services"
     echo "  $0 --service \"tile-services capabilities\" # Rebuild multiple services"
-    echo "  $0 -m my-data -c my-configs --service \"wms reproject\""
+    echo "  $0 -m my-MRFs -p my-shapefiles -c my-configs --service \"wms reproject\""
     echo "  $0 --teardown             # Stop and remove all OnEarth containers"
     exit 1
 }
@@ -209,7 +209,7 @@ fi
 
 if [ ! -d "$CONFIG_DIR" ]; then
     echo "❌ Error: $CONFIG_DIR directory not found"
-    echo "   Please run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
+    echo "   Please run: ./generate-configs.sh -t $CONFIG_DIR <projection>"
     exit 1
 fi
 
@@ -298,7 +298,7 @@ fi
 if [ ${#ENDPOINTS[@]} -eq 0 ]; then
     echo "❌ Error: No endpoint configurations found in $CONFIG_DIR/config/endpoint/"
     echo "   Please create endpoint YAML files for each projection you want to serve"
-    echo "   Run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -p $SHP_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
+    echo "   Run: ./generate-configs.sh -t $CONFIG_DIR <projection>"
     exit 1
 fi
 
@@ -486,7 +486,7 @@ echo "   2. Check Apache error logs: docker exec [service-name] cat /var/log/htt
 echo "   3. Check WMS MapServer logs: docker exec onearth-wms cat /var/log/mapserver/error.log"
 echo "   4. Verify MRF files are accessible in $MRF_ARCHIVE_DIR/{projection}/"
 echo "   5. Ensure layer configs exist in $CONFIG_DIR/config/layers/{projection}/"
-echo "   6. Run: ./generate-configs.sh -m $MRF_ARCHIVE_DIR -p $SHP_ARCHIVE_DIR -t $CONFIG_DIR <projection>"
+echo "   6. Run: ./generate-configs.sh -t $CONFIG_DIR <projection>"
 echo ""
 
 echo "🚀 Quick validation:"

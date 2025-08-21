@@ -185,8 +185,13 @@ args = parser.parse_args()
 endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
 print('Using endpoint config ' + args.endpoint_config)
 if args.shapefile_bucket != '':
-    print('Using shapefile bucket ' + args.shapefile_bucket)
-    shapefile_bucket = '/vsis3/' + args.shapefile_bucket
+    # Check if local directory or S3 bucket
+    if args.shapefile_bucket.startswith('/'):
+        print('Using shapefile directory ' + args.shapefile_bucket)
+        shapefile_bucket = args.shapefile_bucket
+    else:
+        print('Using shapefile bucket ' + args.shapefile_bucket)
+        shapefile_bucket = '/vsis3/' + args.shapefile_bucket
 else:
     shapefile_bucket = '/onearth/shapefiles/'
     print('Using shapefile directory ' + shapefile_bucket)

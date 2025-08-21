@@ -16,8 +16,8 @@ source_mrf:
   idx_path: /onearth/idx/epsg3857
   size_x: {SIZE_X}     # Depends on your data - typically 2^n * tile_size
   size_y: {SIZE_Y}     # Depends on your data - typically 2^n * tile_size  
-  tile_size_x: 512
-  tile_size_y: 512
+  tile_size_x: 256
+  tile_size_y: 256
   year_dir: true
 static: false
 tilematrixset: {TILEMATRIXSET}  # e.g., GoogleMapsCompatible_Level6, 1km, 500m, etc.

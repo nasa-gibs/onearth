@@ -23,12 +23,8 @@ else
 fi
 
 # Set default directory paths (always relative to deployment directory)
-DEFAULT_MRF_ARCHIVE_DIR="$DEPLOYMENT_DIR/local-mrf-archive"
-DEFAULT_SHP_ARCHIVE_DIR="$DEPLOYMENT_DIR/local-shp-archive"
 DEFAULT_SOURCE_CONFIG_DIR="$DEPLOYMENT_DIR/downloaded-onearth-configs"
 DEFAULT_TARGET_CONFIG_DIR="$DEPLOYMENT_DIR/onearth-configs"
-MRF_ARCHIVE_DIR="${MRF_ARCHIVE_DIR:-local-mrf-archive}"
-SHP_ARCHIVE_DIR="${SHP_ARCHIVE_DIR:-local-shp-archive}"
 SOURCE_CONFIG_DIR="${SOURCE_CONFIG_DIR:-downloaded-onearth-configs}"
 TARGET_CONFIG_DIR="${TARGET_CONFIG_DIR:-onearth-configs}"
 
@@ -37,8 +33,6 @@ show_usage() {
     echo "Usage: $0 [options] [projection1] [projection2] ..."
     echo ""
     echo "Options:"
-    echo "  -m, --mrf-archive DIR     MRF archive directory (default: local-mrf-archive)"
-    echo "  -p, --shp-archive DIR     Shapefile archive directory (default: local-shp-archive)"
     echo "  -s, --source-config DIR   Source config directory (default: downloaded-onearth-configs)"  
     echo "  -t, --target-config DIR   Target config directory (default: onearth-configs)"
     echo "  -h, --help                Show this help message"
@@ -48,8 +42,8 @@ show_usage() {
     echo "Examples:"
     echo "  $0                        # Set up all standard projections"
     echo "  $0 epsg4326               # Set up only EPSG:4326"
-    echo "  $0 -m my-data -t my-configs epsg4326 epsg3857"
-    echo "  $0 --mrf-archive satellite-data --target-config prod-configs"
+    echo "  $0 -s my-configs epsg4326 epsg3857"
+    echo "  $0 --target-config prod-configs"
     exit 1
 }
 
@@ -58,14 +52,6 @@ show_usage() {
 PROJECTIONS_TO_SETUP=()
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -m|--mrf-archive)
-            MRF_ARCHIVE_DIR="$2"
-            shift 2
-            ;;
-        -p|--shp-archive)
-            SHP_ARCHIVE_DIR="$2"
-            shift 2
-            ;;
         -s|--source-config)
             SOURCE_CONFIG_DIR="$2"
             shift 2
@@ -89,12 +75,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Resolve directory paths - if using defaults, use absolute paths
-if [ "$MRF_ARCHIVE_DIR" = "local-mrf-archive" ]; then
-    MRF_ARCHIVE_DIR="$DEFAULT_MRF_ARCHIVE_DIR"
-fi
-if [ "$SHP_ARCHIVE_DIR" = "local-shp-archive" ]; then
-    SHP_ARCHIVE_DIR="$DEFAULT_SHP_ARCHIVE_DIR"
-fi
 if [ "$SOURCE_CONFIG_DIR" = "downloaded-onearth-configs" ]; then
     SOURCE_CONFIG_DIR="$DEFAULT_SOURCE_CONFIG_DIR"
 fi
@@ -113,8 +93,6 @@ echo "OnEarth Configuration Generator"
 echo "=========================================="
 echo ""
 echo "📁 Using directories:"
-echo "   MRF Archive: $MRF_ARCHIVE_DIR"
-echo "   Shapefile Archive: $SHP_ARCHIVE_DIR"
 echo "   Source Configs: $SOURCE_CONFIG_DIR"
 echo "   Target Configs: $TARGET_CONFIG_DIR"
 echo ""
@@ -285,23 +263,6 @@ create_layer_structure() {
         echo "📋 Copying existing layer configs for $projection..."
         cp -r "$SOURCE_CONFIG_DIR/config/layers/$projection/"* "$TARGET_CONFIG_DIR/config/layers/$projection/" 2>/dev/null || true
         
-        # Update paths in copied configs
-        find "$TARGET_CONFIG_DIR/config/layers/$projection" -name "*.yaml" -type f | while read -r config_file; do
-            sed -E -i.bak "
-                /^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?\{SHAPEFILE_BUCKET\}\/$projection/ {
-                    s|^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?\{SHAPEFILE_BUCKET\}/$projection([^'\"]*)['\"]?([[:space:]]*#.*)?$|\1'/onearth/shp-archive/$projection\2'\3|
-                    b
-                }
-                /^([[:space:]]*data_file_uri:[[:space:]]*)/ {
-                    s|^([[:space:]]*data_file_uri:[[:space:]]*)['\"]?[^'\"]*/$projection([^'\"]*)['\"]?([[:space:]]*#.*)?$|\1'/onearth/mrf-archive/$projection\2'\3|
-                }
-            " "$config_file"
-            # Update idx_path
-            sed -E -i.bak "s|^([[:space:]]*idx_path:[[:space:]]*).*/$projection(.*)$|\1/onearth/idx/$projection\2|" "$config_file"
-            # Remove backup files
-            rm -f "$config_file.bak"
-        done
-        
         config_count=$(find "$TARGET_CONFIG_DIR/config/layers/$projection" -name "*.yaml" -type f | wc -l)
         echo "   ✅ Copied and updated $config_count layer config(s)"
     else
@@ -392,7 +353,7 @@ echo "📋 Next Steps"
 echo "=========================================="
 echo ""
 echo "1. 📂 Organize your MRF data structure:"
-echo "   $MRF_ARCHIVE_DIR/"
+echo "   local-mrf-archive/"
 for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
     echo "   ├── $proj/"
     echo "   │   ├── {LAYER_NAME_1}/"
@@ -403,7 +364,7 @@ done
 echo ""
 
 echo "2. 📂 Organize your Shapefile data structure (if applicable):"
-echo "   $SHP_ARCHIVE_DIR/"
+echo "   local-shp-archive/"
 for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
     echo "   ├── $proj/"
     echo "   │   ├── {LAYER_NAME_1}/"
@@ -414,25 +375,17 @@ done
 echo ""
 
 echo "3. 📝 Layer configuration files:"
-echo "   Layer configs have been copied from $SOURCE_CONFIG_DIR and updated for local paths:"
+echo "   Layer configs have been copied from $SOURCE_CONFIG_DIR:"
 for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
     echo "   • $TARGET_CONFIG_DIR/config/layers/$proj/{LAYER_NAME}.yaml"
 done
 echo ""
-echo "   💡 Key updates made automatically:"
-echo "      - data_file_uri: '/onearth/mrf-archive/{projection}'" 
-echo "      - idx_path: /onearth/idx/{projection}"
-echo "   💡 You may need to adjust:"
-echo "      - bbox: (coordinate bounds for the projection)"
-echo "      - size_x, size_y: (dimensions of your MRF data)"
-echo "      - tilematrixset: (appropriate for the projection)"
-echo ""
 
-echo "3. 🚀 Run the setup:"
+echo "4. 🚀 Run the setup:"
 echo "   ./setup-onearth-local.sh"
 echo ""
 
-echo "4. 🧪 Test your endpoints:"
+echo "5. 🧪 Test your endpoints:"
 for proj in "${PROJECTIONS_TO_SETUP[@]}"; do
     echo "   # Test $proj:"
     echo "   curl 'http://localhost/wmts/${proj}/all/1.0.0/WMTSCapabilities.xml'"

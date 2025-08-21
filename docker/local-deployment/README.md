@@ -30,4 +30,5 @@ For complete setup instructions, configuration options, and troubleshooting guid
 - `docker-compose.local.yml` - Docker Compose configuration
 - `templates/` - Configuration templates
 - `local-mrf-archive/` - Your MRF data (create this)
+- `local-shp-archive/` - Your shapefile data (create this if you want to serve vectors via WMS)
 - `onearth-configs/` - Generated configurations (created by scripts)
