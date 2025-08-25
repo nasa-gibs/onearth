@@ -404,8 +404,9 @@ __TWMS_ENDPOINTS_HTML__
                                                 // Create WMTS layer list
                                                 let wmtsHtml = '<div class="layer-list">';
                                                 layerInfo.layers.forEach(layer => {
+                                                        const buttonClass = layer.format === 'mvt' ? 'btn btn-xs btn-warning' : 'btn btn-xs btn-info';
                                                         wmtsHtml += `<div class="layer-item" style="margin: 2px 0;">`;
-                                                        wmtsHtml += `<a href="${layer.wmtsTileUrl}" target="_blank" class="btn btn-xs btn-info">${layer.layerId}</a> `;
+                                                        wmtsHtml += `<a href="${layer.wmtsTileUrl}" target="_blank" class="${buttonClass}">${layer.layerId}</a> `;
                                                         wmtsHtml += `<small>${layer.format} | ${layer.tileMatrixSet}</small>`;
                                                         wmtsHtml += `</div>`;
                                                 });
@@ -431,8 +432,9 @@ __TWMS_ENDPOINTS_HTML__
                                                 if (twmsElement) {
                                                         let twmsHtml = '<div class="layer-list">';
                                                         layerInfo.layers.forEach(layer => {
+                                                                const buttonClass = layer.format === 'mvt' ? 'btn btn-xs btn-warning' : 'btn btn-xs btn-info';
                                                                 twmsHtml += `<div class="layer-item" style="margin: 2px 0;">`;
-                                                                twmsHtml += `<a href="${layer.twmsUrl}" target="_blank" class="btn btn-xs btn-info">${layer.layerId}</a> `;
+                                                                twmsHtml += `<a href="${layer.twmsUrl}" target="_blank" class="${buttonClass}">${layer.layerId}</a> `;
                                                                 twmsHtml += `<small>GetMap</small>`;
                                                                 twmsHtml += `</div>`;
                                                         });
