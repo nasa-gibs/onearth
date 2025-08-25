@@ -40,8 +40,8 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.24.5.linux-amd64.tar.gz && \
-    tar xf go1.24.5.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.24.6.linux-amd64.tar.gz && \
+    tar xf go1.24.6.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.34.tar.gz && \
