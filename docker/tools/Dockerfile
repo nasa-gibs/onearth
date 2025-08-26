@@ -37,13 +37,19 @@ RUN dnf -y update && \
         cairo-devel-1.18.2 \
         cmake-3.30.5 \
         harfbuzz-devel-8.4.0 \
-        fcgi-devel-2.4.0 \
         proj-9.5.0 \
         proj-devel-9.5.0 \
         geos-3.13.0 \
         geos-devel-3.13.0 \
         python3-devel-3.12.9 \
         protobuf-c-devel-1.5.0 && \
+	dnf clean all
+
+# FastCGI
+RUN cd /tmp && \
+    wget https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/f/fcgi-2.4.0-52.el10_1.x86_64.rpm && \
+    wget https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/f/fcgi-devel-2.4.0-52.el10_1.x86_64.rpm && \
+    dnf install -y ./fcgi-2.4.0-52.el10_1.x86_64.rpm ./fcgi-devel-2.4.0-52.el10_1.x86_64.rpm && \
 	dnf clean all
 
 # libspatialindex
