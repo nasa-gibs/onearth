@@ -1,12 +1,13 @@
 services:
   onearth-deps:
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: ${ONEARTH_DEPS_TAG}
     build:
       context: ../..
       dockerfile: docker/deps/Dockerfile
       no_cache: true  
       tags: 
-        - ${ONEARTH_DEPS_TAG} 
+        - ${ONEARTH_DEPS_TAG}
     networks:
       - oe2
     deploy:
@@ -15,6 +16,7 @@ services:
     container_name: onearth-time-service
     hostname: onearth-time-service
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: nasagibs/onearth-time-service:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     ports: 
       - 6379:6379
     depends_on:
@@ -42,6 +44,7 @@ services:
     container_name: onearth-tile-services
     hostname: onearth-tile-services
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: nasagibs/onearth-tile-services:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     ports:
       - 443:443
     depends_on:
@@ -72,6 +75,7 @@ services:
     container_name: onearth-capabilities
     hostname: onearth-capabilities
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: nasagibs/onearth-capabilities:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     ports: 
       - 8081:80
     depends_on:
@@ -98,6 +102,7 @@ services:
     container_name: onearth-reproject
     hostname: onearth-reproject
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: nasagibs/onearth-reproject:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     ports: 
       - 8082:80
     depends_on:
@@ -129,6 +134,7 @@ services:
     container_name: onearth-wms
     hostname: onearth-wms
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: nasagibs/onearth-wms:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     ports: 
       - 8443:443
     depends_on:
@@ -165,6 +171,7 @@ services:
     container_name: onearth-demo
     hostname: onearth-demo
     platform: ${DOCKER_PLATFORM_OPTION}
+    image: nasagibs/onearth-demo:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
     ports:
       - 80:80
     depends_on:
