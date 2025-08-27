@@ -16,7 +16,7 @@ services:
     container_name: onearth-time-service
     hostname: onearth-time-service
     platform: ${DOCKER_PLATFORM_OPTION}
-    image: nasagibs/onearth-time-service:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    image: nasagibs/onearth-time-service:${ONEARTH_IMAGE_TAG}
     ports: 
       - 6379:6379
     depends_on:
@@ -29,7 +29,7 @@ services:
       dockerfile: docker/time_service/Dockerfile
       no_cache: true  
       tags: 
-        - nasagibs/onearth-time-service:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+        - nasagibs/onearth-time-service:${ONEARTH_IMAGE_TAG}
     environment: 
       DEBUG_LOGGING: $DEBUG_LOGGING
       S3_URL: /onearth/mrf-archive
@@ -44,7 +44,7 @@ services:
     container_name: onearth-tile-services
     hostname: onearth-tile-services
     platform: ${DOCKER_PLATFORM_OPTION}
-    image: nasagibs/onearth-tile-services:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    image: nasagibs/onearth-tile-services:${ONEARTH_IMAGE_TAG}
     ports:
       - 443:443
     depends_on:
@@ -57,7 +57,7 @@ services:
       dockerfile: docker/tile_services/Dockerfile
       no_cache: true  
       tags: 
-        - nasagibs/onearth-tile-services:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+        - nasagibs/onearth-tile-services:${ONEARTH_IMAGE_TAG}
     environment: 
       USE_SSL: $USE_SSL
       SERVER_NAME: $SERVER_NAME
@@ -75,7 +75,7 @@ services:
     container_name: onearth-capabilities
     hostname: onearth-capabilities
     platform: ${DOCKER_PLATFORM_OPTION}
-    image: nasagibs/onearth-capabilities:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    image: nasagibs/onearth-capabilities:${ONEARTH_IMAGE_TAG}
     ports: 
       - 8081:80
     depends_on:
@@ -88,7 +88,7 @@ services:
       dockerfile: docker/capabilities/Dockerfile
       no_cache: true  
       tags: 
-        - nasagibs/onearth-capabilities:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+        - nasagibs/onearth-capabilities:${ONEARTH_IMAGE_TAG}
     environment: 
       DEBUG_LOGGING: $DEBUG_LOGGING
       S3_URL: /onearth/mrf-archive
@@ -102,7 +102,7 @@ services:
     container_name: onearth-reproject
     hostname: onearth-reproject
     platform: ${DOCKER_PLATFORM_OPTION}
-    image: nasagibs/onearth-reproject:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    image: nasagibs/onearth-reproject:${ONEARTH_IMAGE_TAG}
     ports: 
       - 8082:80
     depends_on:
@@ -121,7 +121,7 @@ services:
       dockerfile: docker/reproject/Dockerfile
       no_cache: true  
       tags: 
-        - nasagibs/onearth-reproject:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+        - nasagibs/onearth-reproject:${ONEARTH_IMAGE_TAG}
     environment: 
       DEBUG_LOGGING: $DEBUG_LOGGING
     networks:
@@ -134,7 +134,7 @@ services:
     container_name: onearth-wms
     hostname: onearth-wms
     platform: ${DOCKER_PLATFORM_OPTION}
-    image: nasagibs/onearth-wms:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    image: nasagibs/onearth-wms:${ONEARTH_IMAGE_TAG}
     ports: 
       - 8443:443
     depends_on:
@@ -153,7 +153,7 @@ services:
       dockerfile: docker/wms_service/Dockerfile
       no_cache: false  
       tags: 
-        - nasagibs/onearth-wms:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+        - nasagibs/onearth-wms:${ONEARTH_IMAGE_TAG}
     environment: 
       USE_SSL: $USE_SSL
       SERVER_NAME: $SERVER_NAME
@@ -171,7 +171,7 @@ services:
     container_name: onearth-demo
     hostname: onearth-demo
     platform: ${DOCKER_PLATFORM_OPTION}
-    image: nasagibs/onearth-demo:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    image: nasagibs/onearth-demo:${ONEARTH_IMAGE_TAG}
     ports:
       - 80:80
     depends_on:
@@ -190,7 +190,7 @@ services:
       dockerfile: docker/demo/Dockerfile
       no_cache: true  
       tags: 
-        - nasagibs/onearth-demo:${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+        - nasagibs/onearth-demo:${ONEARTH_IMAGE_TAG}
     environment: 
       DEBUG_LOGGING: $DEBUG_LOGGING
     volumes:

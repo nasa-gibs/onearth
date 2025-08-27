@@ -141,6 +141,9 @@ Deploy OnEarth services using the setup script:
 # Use custom directories
 ./setup-onearth-local.sh -m custom-mrf-dir -p custom-shp-dir -c target-configs
 
+# Use version-only tags (useful for pulling existing images from Docker Hub)
+./setup-onearth-local.sh --version-only
+
 # Complete environment teardown
 ./setup-onearth-local.sh --teardown
 ```
@@ -161,6 +164,7 @@ If you've made code changes to any of the images, you will need to run `./setup-
 - `--build-deps` - Rebuild only base dependencies
 - `-s, --service SERVICES` - Rebuild specified services (space-separated)
 - `--no-build` - Start without building (requires existing images)
+- `-v, --version-only` - Use version-only tags (e.g., 2.9.0 instead of 2.9.0-3)
 - `--teardown` - Remove all OnEarth containers and networks
 - `-h, --help` - Show help message
 

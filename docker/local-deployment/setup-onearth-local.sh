@@ -45,6 +45,7 @@ show_usage() {
     echo "  --build-deps              Force rebuild only dependencies (onearth-deps)"
     echo "  -s, --service SERVICES    Rebuild only the specified service(s) (space-separated)"
     echo "  --no-build               Skip building, only start existing images"
+    echo "  -v, --version-only       Use version-only tags (e.g., 2.9.0 instead of 2.9.0-3)"
     echo "  --teardown               Stop and remove all OnEarth containers and networks"
     echo "  -h, --help                Show this help message"
     echo ""
@@ -76,6 +77,7 @@ BUILD_DEPS_ONLY=false
 BUILD_SERVICE=""
 NO_BUILD=false
 TEARDOWN=false
+VERSION_ONLY=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -106,6 +108,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-build)
             NO_BUILD=true
+            shift
+            ;;
+        -v|--version-only)
+            VERSION_ONLY=true
             shift
             ;;
         --teardown)
@@ -252,7 +258,18 @@ export DEBUG_LOGGING=true  # Enable debug logging for local development
 export MRF_ARCHIVE_DIR  # Export for docker-compose to use
 export SHP_ARCHIVE_DIR  # Export for docker-compose to use
 export CONFIG_DIR  # Export for docker-compose to use
-export ONEARTH_DEPS_TAG=nasagibs/onearth-deps:${ONEARTH_VERSION}
+
+# Set image tags based on --no-release-number option
+if [ "$VERSION_ONLY" = true ]; then
+    export ONEARTH_DEPS_TAG=nasagibs/onearth-deps:${ONEARTH_VERSION}
+    export ONEARTH_IMAGE_TAG=${ONEARTH_VERSION}
+    echo "   📝 Using version-only tags: ${ONEARTH_VERSION}"
+else
+    export ONEARTH_DEPS_TAG=nasagibs/onearth-deps:${ONEARTH_VERSION}
+    export ONEARTH_IMAGE_TAG=${ONEARTH_VERSION}-${ONEARTH_RELEASE}
+    echo "   📝 Using version-release tags: ${ONEARTH_VERSION}-${ONEARTH_RELEASE}"
+fi
+
 export START_ONEARTH_TOOLS_CONTAINER=0
 
 echo "   ONEARTH_VERSION: $ONEARTH_VERSION"
@@ -391,13 +408,14 @@ elif [ "$FORCE_BUILD" = true ]; then
 else
     echo "🏗️  Smart build - only building missing images..."
     # Let docker compose decide what needs building (no --build flag)
+    # Note: Docker Compose will use ONEARTH_IMAGE_TAG environment variable for image tags
 fi
 
 echo "🚀 Starting OnEarth services..."
 if [ "$NO_BUILD" = true ]; then
     # Check if required images exist
     echo "   Checking for required images..."
-    REQUIRED_TAG="${ONEARTH_VERSION}-${ONEARTH_RELEASE}"
+    REQUIRED_TAG="$ONEARTH_IMAGE_TAG"
     MISSING_IMAGES=0
     
     for service in capabilities time-service tile-services reproject wms demo; do
