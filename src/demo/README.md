@@ -8,8 +8,8 @@ The static demo page (`index.html`) is used with the `run.sh` deployment and inc
 
 - WMTS Tile Clients that show off sample data, status check imagery, and reprojected profiling imagery
 - WMTS Tile Clients for each projection (4326, 3857, 3413, 3031) that pulls imagery from S3
-- Sample requests for WMTS GetCapabilities, TWMS GetTileService, and TWMS GetCapabilities
-- Pre-configured endpoints with sample imagery
+- Sample requests for WMTS GetCapabilities, TWMS GetTileService, TWMS GetCapabilities, and WMS GetCapabilities
+- Pre-configured WMTS, TWMS, and WMS endpoints with sample imagery
 
 ## Dynamic Demo Page (Local Deployment)
 
