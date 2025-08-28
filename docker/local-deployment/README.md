@@ -27,6 +27,7 @@ For complete setup instructions, configuration options, and troubleshooting guid
 
 - `setup-onearth-local.sh` - Main deployment script
 - `generate-configs.sh` - Configuration generation script
+- `generate-data-directories.sh` - Generate Data Directories to place data 
 - `docker-compose.local.yml` - Docker Compose configuration
 - `templates/` - Configuration templates
 - `local-mrf-archive/` - Your MRF data (create this)

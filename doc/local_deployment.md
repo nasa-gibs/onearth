@@ -9,6 +9,7 @@ The local deployment system consists of the following components located in `doc
 - `setup-onearth-local.sh` - Main deployment script
 - `generate-configs.sh` - Configuration generation script  
 - `docker-compose.local.yml` - Docker Compose configuration
+- `generate-data-directories.sh` - Generate Data Directories to place data 
 - `templates/` - Configuration templates for endpoints and layers
 
 ### Data Directory Structure
@@ -40,6 +41,8 @@ docker/local-deployment/
 ```
 
 ## Deployment Process
+
+**NOTE** You can create the folders to add your MRFs and configs to with `./generate-data-directories.sh`
 
 ### Step 1: Data Organization
 
