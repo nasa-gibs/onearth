@@ -60,7 +60,7 @@ local-mrf-archive/
 └── ...
 ```
 
-If you intend to serve vectors via WMS, organize shapefiles by projection within the shapefile archive directory:
+If you intend to serve vectors via WMS, organize shapefiles by projection within the shapefile archive directory. The corresponding layer MRF/IDX/PVT files should be in local-mrf-archive for the shapefiles to be viewed
 
 ```
 local-shp-archive/
