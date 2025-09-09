@@ -409,7 +409,7 @@ if __name__ == '__main__':
                         dest='end_date',
                         metavar='END_DATE',
                         type=str,
-                        help='Only dates that take place before this value will be considered while calculating periods')
+                        help='Only dates that take place before this value will be considered while calculating periods. If there is only one date that meets this criteria, then the duration in the generated period will match that of the duration between the single date and the specified end date.')
     parser.add_argument('-k', '--keep_existing_periods',
                         dest='keep_existing_periods',
                         action='store_true',

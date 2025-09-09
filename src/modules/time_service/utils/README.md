@@ -27,14 +27,16 @@ options:
   -s START_DATE, --start_date START_DATE
                         Only dates that take place after this value will be considered while calculating periods
   -e END_DATE, --end_date END_DATE
-                        Only dates that take place before this value will be considered while calculating periods
+                        Only dates that take place before this value will be considered while calculating periods. If there is only one
+                        date that meets this criteria, then the duration in the generated period will match that of the duration between
+                        the single date and the specified end date.
   -k, --keep_existing_periods
                         Don't delete existing periods at :periods before adding the newly calculated periods. Note that this can lead to
                         overlapping periods. Most useful when using --start_datetime and --end_datetime.
   -f, --find_smallest_interval
-                        Force the script to calculate the interval for each period based on the smallest interval between any two dates. For
-                        performance reasons, the script would otherwise only do this if the intervals between the first and second dates and
-                        second and third dates differ.
+                        Force the script to calculate the interval for each period based on the smallest interval between any two dates.
+                        For performance reasons, the script would otherwise only do this if the intervals between the first and second
+                        dates and second and third dates differ.
   -p PORT, --port PORT  redis port for database
   -r REDIS_URI, --redis_uri REDIS_URI
                         URI for the Redis database
