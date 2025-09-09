@@ -219,7 +219,10 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
         elif len(trimmed_dates) == 1 and trimmed_dates[0]:
             # Default to P1D
             if force_period == 'DETECT':
-                duration = 'P1D'
+                if end_date:
+                    duration = get_duration_from_rd(rd.relativedelta(datetime.fromisoformat(end_date), datetime.fromisoformat(trimmed_dates[0])))
+                else:
+                    duration = 'P1D'
             else:
                 duration = force_period
             periods.append({'start': trimmed_dates[0],

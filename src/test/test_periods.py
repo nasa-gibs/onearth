@@ -161,6 +161,15 @@ class TestPeriods(unittest.TestCase):
         end_date = "2024-01-02"
         expected = ["2024-01-01/2024-01-02/P1D"]
         self.assertEqual(calculate_periods_from_config(dates, config, None, end_date), expected)
+    
+    def test_forced_end_date_take_interval(self):
+        # Ensure that when there is just one date that occurs before the end_date,
+        # the duration between the date and the end date becomes the period's interval
+        dates = ["2024-01-01T01:00:00", "2024-01-03T01:00:00"]
+        config = "DETECT"
+        end_date = "2024-01-01T01:12:34"
+        expected = ["2024-01-01T01:00:00Z/2024-01-01T01:00:00Z/PT12M34S"]
+        self.assertEqual(calculate_periods_from_config(dates, config, None, end_date), expected)
 
     def test_detect_with_minute_intervals(self):
         # Test detection of minute intervals
