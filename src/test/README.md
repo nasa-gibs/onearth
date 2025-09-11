@@ -107,7 +107,11 @@ Each test script will output a JUnit XML results file. By default, these files a
 44. Test requesting periods for all layers while using the limit option to return the last *n* periods
 45. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
 46. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
-47. Test a time snapping date request while specifying start and end dates
+47. Test multi-unit ISO8601 duration snapping (e.g., P1DT2S, PT59M41S, P1Y2M3DT4H5M6S, P1W2DT3H4M5S)
+48. Test multi-unit duration fixed time intervals (durations without years/months like PT1H30M, P1DT12H, PT45M30S)
+49. Test multi-unit duration non-fixed intervals (durations with years/months like P1Y1M, P2M1D)
+50. Test multi-unit duration edge cases (P0DT1S, PT0H0M1S, P1W)
+51. Test a time snapping date request while specifying start and end dates
 
 ## Time Utilities Tests
 ***Contains functional tests for oe_scrape_time.py, oe_periods_configure.py, periods.py, and oe_periods_key_converter.py. For periods.py unit tests, see test_periods.py***

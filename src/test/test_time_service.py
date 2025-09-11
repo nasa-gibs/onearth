@@ -1421,6 +1421,138 @@ class TestDateService(unittest.TestCase):
                 'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], periods_in_range)
             )
 
+    def test_multi_unit_duration_snap(self):
+        # Test multi-unit ISO8601 durations like P1DT2S, PT59M41S, etc.
+        test_layers = [
+            # Test P1DT2S (1 day + 2 seconds)
+            ('test1_multi_unit_duration', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-01-10T00:00:00Z/P1DT2S',
+             '2024-01-03T00:00:01Z', '2024-01-02T00:00:02Z'),
+            # Test PT59M41S (59 minutes + 41 seconds)
+            ('test2_multi_unit_duration', '2024-01-01T00:00:00Z',
+             '2024-01-01T12:00:00Z/2024-01-01T12:00:00Z/PT59M41S',
+             '2024-01-01T12:30:20Z', '2024-01-01T12:00:00Z'),
+            # Test P1Y2M3DT4H5M6S (1 year + 2 months + 3 days + 4 hours + 5 minutes + 6 seconds)
+            ('test3_multi_unit_duration', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2026-01-01T00:00:00Z/P1Y2M3DT4H5M6S',
+             '2025-03-15T12:30:45Z', '2025-03-04T04:05:06Z'),
+            # Test P1W2DT3H4M5S (1 week + 2 days + 3 hours + 4 minutes + 5 seconds)
+            ('test4_multi_unit_duration', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-02-01T00:00:00Z/P1W2DT3H4M5S',
+             '2024-01-15T06:30:20Z', '2024-01-10T03:04:05Z'),
+        ]
+
+        seed_redis_data(test_layers)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with multi-unit duration snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
+
+    def test_multi_unit_duration_fixed_time_intervals(self):
+        # Test that multi-unit durations without years/months are treated as fixed intervals
+        test_layers = [
+            # Test PT1H30M (1 hour + 30 minutes = 90 minutes = 5400 seconds)
+            ('test1_fixed_multi_unit', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-01-02T00:00:00Z/PT1H30M',
+             '2024-01-01T02:15:00Z', '2024-01-01T01:30:00Z'),
+            # Test P1DT12H (1 day + 12 hours = 36 hours = 129600 seconds)
+            ('test2_fixed_multi_unit', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-01-05T00:00:00Z/P1DT12H',
+             '2024-01-02T18:00:00Z', '2024-01-02T12:00:00Z'),
+            # Test PT45M30S (45 minutes + 30 seconds = 2730 seconds)
+            ('test3_fixed_multi_unit', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-01-01T06:00:00Z/PT45M30S',
+             '2024-01-01T01:30:15Z', '2024-01-01T00:45:30Z'),
+        ]
+
+        seed_redis_data(test_layers)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with fixed multi-unit duration snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
+
+    def test_multi_unit_duration_non_fixed_intervals(self):
+        # Test that multi-unit durations with years/months are treated as non-fixed intervals
+        test_layers = [
+            # Test P1Y1M (1 year + 1 month - non-fixed due to variable month lengths)
+            ('test1_non_fixed_multi_unit', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2026-01-01T00:00:00Z/P1Y1M',
+             '2025-03-15T00:00:00Z', '2025-02-01T00:00:00Z'),
+            # Test P2M1D (2 months + 1 day - non-fixed due to months)
+            ('test2_non_fixed_multi_unit', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-12-01T00:00:00Z/P2M1D',
+             '2024-05-15T00:00:00Z', '2024-05-03T00:00:00Z'),
+        ]
+
+        seed_redis_data(test_layers)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with non-fixed multi-unit duration snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
+
+    def test_multi_unit_duration_edge_cases(self):
+        # Test edge cases for multi-unit durations
+        test_layers = [
+            # Test P0DT1S (0 days + 1 second - just seconds)
+            ('test1_edge_case', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-01-01T01:00:00Z/P0DT1S',
+             '2024-01-01T00:00:30Z', '2024-01-01T00:00:30Z'),
+            # Test PT0H0M1S (0 hours + 0 minutes + 1 second)
+            ('test2_edge_case', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-01-01T00:01:00Z/PT0H0M1S',
+             '2024-01-01T00:00:25Z', '2024-01-01T00:00:25Z'),
+            # Test P1W (1 week only)
+            ('test3_edge_case', '2024-01-01T00:00:00Z',
+             '2024-01-01T00:00:00Z/2024-02-01T00:00:00Z/P1W',
+             '2024-01-10T00:00:00Z', '2024-01-08T00:00:00Z'),
+        ]
+
+        seed_redis_data(test_layers)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with multi-unit duration edge case snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
+
     def test_day_snap_range(self):
         test_layers = [
             # Snap date is before range

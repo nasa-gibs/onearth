@@ -55,19 +55,63 @@ local function send_response (code, msg_string)
 end
 
 -- Date utility functions
-local function add_interval (date, interval_length, interval_size)
-    if interval_size == "Y" then
-        return date:addyears(interval_length)
-    elseif interval_size == "M" then
-        return date:addmonths(interval_length)
+-- Parse ISO8601 duration strings with multiple units (e.g., P1DT2S, PT59M41S)
+-- Returns a table with fields: years, months, weeks, days, hours, minutes, seconds
+local function parse_iso8601_duration (duration_string)
+    if not duration_string or type(duration_string) ~= "string" then
+        return nil
     end
+    local date_part, time_part = string.match(duration_string, "^P([^T]*)T?(.*)$")
+    if not date_part then
+        return nil
+    end
+    local years = tonumber(string.match(date_part, "(%d+)Y")) or 0
+    local months = tonumber(string.match(date_part, "(%d+)M")) or 0
+    local weeks = tonumber(string.match(date_part, "(%d+)W")) or 0
+    local days = tonumber(string.match(date_part, "(%d+)D")) or 0
+    local hours = time_part ~= "" and (tonumber(string.match(time_part, "(%d+)H")) or 0) or 0
+    local minutes = time_part ~= "" and (tonumber(string.match(time_part, "(%d+)M")) or 0) or 0
+    local seconds = time_part ~= "" and (tonumber(string.match(time_part, "(%d+)S")) or 0) or 0
+    return {
+        years = years,
+        months = months,
+        weeks = weeks,
+        days = days,
+        hours = hours,
+        minutes = minutes,
+        seconds = seconds
+    }
 end
 
-local function find_snap_date_for_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
-    local interval_in_sec = interval_size == "S" and interval_length
-        or interval_size == "MM" and interval_length * 60
-        or interval_size == "H" and interval_length * 60 * 60
-        or interval_size == "D" and interval_length * 60 * 60 * 24
+local function duration_is_fixed (duration)
+    return duration and duration.years == 0 and duration.months == 0
+end
+
+local function duration_fixed_total_seconds (duration)
+    local total_days = (duration.weeks or 0) * 7 + (duration.days or 0)
+    local total_seconds = total_days * 24 * 60 * 60
+    total_seconds = total_seconds + (duration.hours or 0) * 60 * 60
+    total_seconds = total_seconds + (duration.minutes or 0) * 60
+    total_seconds = total_seconds + (duration.seconds or 0)
+    return total_seconds
+end
+
+local function add_interval (date, duration)
+    if duration.years and duration.years ~= 0 then
+        date = date:addyears(duration.years)
+    end
+    if duration.months and duration.months ~= 0 then
+        date = date:addmonths(duration.months)
+    end
+    local seconds = duration_fixed_total_seconds(duration)
+    if seconds ~= 0 then
+        date = date:addseconds(seconds)
+    end
+    return date
+end
+
+local function find_snap_date_for_fixed_time_interval (start_date, req_date, end_date, duration, snap_to_previous)
+    local interval_in_sec = duration_fixed_total_seconds(duration)
         or nil
     local date_diff = date_util.diff(req_date, start_date)
     local closest_interval_date
@@ -82,10 +126,10 @@ local function find_snap_date_for_fixed_time_interval (start_date, req_date, end
 end
 
 
-local function find_snap_date_for_non_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
+local function find_snap_date_for_non_fixed_time_interval (start_date, req_date, end_date, duration, snap_to_previous)
     local previous_interval_date = start_date
     while true do
-        local check_date = add_interval(previous_interval_date:copy(), interval_length, interval_size)
+        local check_date = add_interval(previous_interval_date:copy(), duration)
         if check_date > req_date then -- Found snap date
             if snap_to_previous then
                 return previous_interval_date
@@ -100,11 +144,11 @@ local function find_snap_date_for_non_fixed_time_interval (start_date, req_date,
     end
 end
 
-local function get_snap_date (start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
-    if interval_size == "H" or interval_size == "MM" or interval_size == "S" or interval_size == "D" then
-        return find_snap_date_for_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
+local function get_snap_date (start_date, req_date, end_date, duration, snap_to_previous)
+    if duration_is_fixed(duration) then
+        return find_snap_date_for_fixed_time_interval(start_date, req_date, end_date, duration, snap_to_previous)
     else
-        return find_snap_date_for_non_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
+        return find_snap_date_for_non_fixed_time_interval(start_date, req_date, end_date, duration, snap_to_previous)
     end
 end
 
@@ -127,13 +171,11 @@ local function time_snap (req_date, periods, snap_to_previous)
         local end_date
         if parsed_period[2] then -- this is a period, so look at both dates
             if req_date > period_date then
-                local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
-                local interval_size = string.match(parsed_period[3], "%a+$")
-                if string.sub(parsed_period[3], 1, 2) == "PT" and interval_size == "M" then
-                    interval_size = "MM"
+                local duration = parse_iso8601_duration(parsed_period[3])
+                if duration then
+                    snap_date = get_snap_date(period_date:copy(), req_date, date_util(parsed_period[2]), duration, snap_to_previous)
+                    snap_period_idx = mid
                 end
-                snap_date = get_snap_date(period_date:copy(), req_date, date_util(parsed_period[2]), interval_length, interval_size, snap_to_previous)
-                snap_period_idx = mid
             end
         end
     
