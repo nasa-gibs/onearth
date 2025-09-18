@@ -1,16 +1,16 @@
 --- a/SPECS/httpd.spec	2025-06-26 12:42:55
 +++ b/SPECS/httpd.spec	2025-06-30 11:29:52
-@@ -107,6 +107,9 @@
- 
- # Security fixes
- # Patch200: ...
+@@ -115,6 +115,9 @@
+ Patch201: httpd-2.4.63-CVE-2024-47252.patch
+ # https://bugzilla.redhat.com/show_bug.cgi?id=2374580
+ Patch202: httpd-2.4.63-CVE-2025-49812.patch
 +
 +Patch900: mod_proxy_http.patch
 +Patch901: proxypass_nomain_flag.patch
  
  # Apache-2.0: everything
  # BSD-3-Clause: util_pcre.c, ap_regex.h
-@@ -255,6 +258,7 @@
+@@ -263,6 +263,7 @@
  %{gpgverify} --keyring='%{SOURCE2}' --signature='%{SOURCE1}' --data='%{SOURCE0}'
  %autosetup -p1 -S gendiff
  
@@ -18,7 +18,7 @@
  # Patch in the vendor string
  sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
  sed -i 's/@RELEASE@/%{release}/' server/core.c
-@@ -542,13 +546,6 @@
+@@ -554,13 +555,6 @@
  install -m 644 -p $RPM_SOURCE_DIR/httpd.logrotate \
          $RPM_BUILD_ROOT/etc/logrotate.d/httpd
  
@@ -32,7 +32,7 @@
  
  # fix man page paths
  sed -e "s|/usr/local/apache2/conf/httpd.conf|/etc/httpd/conf/httpd.conf|" \
-@@ -670,8 +667,6 @@
+@@ -682,8 +676,6 @@
  
  %files
  %{_mandir}/man8/*
@@ -41,7 +41,7 @@
  
  %config(noreplace) %{_sysconfdir}/httpd/conf.modules.d/00-brotli.conf
  %config(noreplace) %{_sysconfdir}/httpd/conf.modules.d/00-systemd.conf
-@@ -793,7 +788,6 @@
+@@ -805,7 +797,6 @@
  %{_libexecdir}/httpd-ssl-pass-dialog
  %{_libexecdir}/httpd-ssl-gencerts
  %{_unitdir}/httpd.socket.d/10-listen443.conf
