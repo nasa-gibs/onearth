@@ -323,6 +323,40 @@ def calculate_layer_periods(redis_cli, layer_key, new_datetime=None, expiration=
                 redis_cli.delete(f'{key}:periods')
             
             if len(calculated_periods) > 0:
+                # When keeping existing periods, remove any existing period that has the same
+                # start and end as an incoming period (regardless of duration), then add.
+                if keep_existing_periods:
+                    # Fetch existing periods depending on storage type
+                    if is_set:
+                        existing_bytes = redis_cli.smembers(f'{key}:periods')
+                    else:
+                        existing_bytes = redis_cli.zrange(f'{key}:periods', 0, -1)
+                    existing = [p.decode('utf-8') for p in existing_bytes]
+
+                    # Build a mapping from start/end pair to existing full period strings
+                    def start_end(period_str):
+                        parts = period_str.split('/')
+                        return f"{parts[0]}/{parts[1]}" if len(parts) >= 2 else period_str
+
+                    existing_by_start_end = {}
+                    for existing_period in existing:
+                        start_end_pair = start_end(existing_period)
+                        existing_by_start_end.setdefault(start_end_pair, []).append(existing_period)
+
+                    # For each new period, remove any existing with same start/end
+                    to_remove = []
+                    for new_period in calculated_periods:
+                        start_end_pair = start_end(new_period)
+                        matches = existing_by_start_end.get(start_end_pair, [])
+                        if matches:
+                            to_remove.extend(matches)
+
+                    if to_remove:
+                        if is_set:
+                            redis_cli.srem(f'{key}:periods', *to_remove)
+                        else:
+                            redis_cli.zrem(f'{key}:periods', *to_remove)
+
                 # Add everything as an unsorted set only when the periods key is already
                 # an unsorted set and we're keeping all the existing periods
                 if keep_existing_periods and is_set:

@@ -191,6 +191,8 @@ Each test script will output a JUnit XML results file. By default, these files a
 16. Test `calculate_periods_from_config` with subdaily times with irregular intervals and a config of `DETECT/DETECT/PT6M`
 17. Test `calculate_layer_periods` while using multiple time configs
 18. Test `calculate_layer_periods` while using the `keep_existing_periods` option
+19. Test replacing existing period with same start/end while using the `keep_existing_periods` (zset)
+20. Test replacing existing period with same start/end while using the `keep_existing_periods` (set)
 
 ## oe_best_redis.py Tests
 1. Test `calculate_layer_best` with a datetime specified
