@@ -299,6 +299,52 @@ class TestPeriods(unittest.TestCase):
         self.assertEqual(periods, expected_periods, "Returned periods {0} does not match expected periods {1}".format(periods, expected_periods))
         self.assertEqual(default, new_date + "Z", "Returned default date {0} does not match expected default date {1}".format(default, new_date + 'Z'))
 
+    def test_replace_same_start_end_in_zset_when_keeping_existing(self):
+        # Old period in zset with same start/end but different duration should be removed
+        layer_key = "test_layer_replace_zset"
+
+        # Existing periods as zset
+        old_period = "2024-01-01T00:00:00Z/2024-01-01T00:00:00Z/P1D"
+        self.redis_client.zadd(layer_key + ":periods", {old_period: 0})
+
+        # Provide dates and a config that will generate a period with same start/end but different duration
+        dates = {"2024-01-01T00:00:00": 0}
+        self.redis_client.zadd(layer_key + ":dates", dates)
+        # Config that forces a PT12H period for the same date
+        config = "DETECT"
+        self.redis_client.sadd(layer_key + ":config", config)
+
+        calculate_layer_periods(self.redis_client, layer_key, end_date="2024-01-01T12:00:00", keep_existing_periods=True)
+
+        periods = self.redis_client.zrange(layer_key + ":periods", 0, -1)
+        # Should only have the new period, old one should be removed
+        self.assertEqual(len(periods), 1)
+        self.assertTrue(periods[0].decode('utf-8').endswith('/PT12H'))
+
+    def test_replace_same_start_end_in_set_when_keeping_existing(self):
+        # Old period in set with same start/end but different duration should be removed
+        layer_key = "test_layer_replace_set"
+
+        # Existing periods as set
+        old_period = "2024-01-01T00:00:00Z/2024-01-01T00:00:00Z/P1D"
+        self.redis_client.sadd(layer_key + ":periods", old_period)
+
+        # Provide dates and a config that will generate a period with same start/end but different duration
+        dates = {"2024-01-01T00:00:00": 0}
+        self.redis_client.zadd(layer_key + ":dates", dates)
+        # Config that forces a PT12H period for the same date
+        config = "DETECT"
+        self.redis_client.sadd(layer_key + ":config", config)
+
+        calculate_layer_periods(self.redis_client, layer_key, end_date="2024-01-01T12:00:00", keep_existing_periods=True)
+
+        # Should remain as a set and only contain the new period
+        self.assertEqual(self.redis_client.type(layer_key + ":periods"), b'set')
+        members = self.redis_client.smembers(layer_key + ":periods")
+        # Should only have one period with PT12H duration
+        self.assertEqual(len(members), 1)
+        new_period = list(members)[0].decode('utf-8')
+        self.assertTrue(new_period.endswith('/PT12H'))
 
     @classmethod
     def tearDownClass(self):
