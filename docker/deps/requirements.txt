@@ -6,4 +6,4 @@ boto3==1.38.43
 redis==6.2.0
 urllib3==2.5.0
 setuptools==80.9.0
-pip==25.2
+pip==25.3
