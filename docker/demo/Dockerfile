@@ -35,8 +35,6 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel python3-pip python3-setuptools python3-wheel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
     dnf autoremove -y && \
     dnf clean all
-RUN pip uninstall -y pip && \
-    rm -rf /usr/lib*/python*/ensurepip
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
