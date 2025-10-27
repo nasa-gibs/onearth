@@ -61,6 +61,7 @@ RUN dnf remove -y python3-dateutil
 COPY requirements.txt .
 
 # Install pip dependencies
+RUN pip install pip==25.3
 RUN pip install -r requirements.txt
 
 # libspatialindex
@@ -86,7 +87,7 @@ RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GD
 RUN dnf remove -y python3-packaging || echo "python3-packaging was not found or removal failed, attempting to continue."
 RUN pip install --force-reinstall 'packaging>=25.0'
 
-RUN pip install --config-settings="--build-option=-I/usr/local/include/gdal" GDAL==`gdal-config --version`
+RUN GDAL_CONFIG=/usr/local/bin/gdal-config CPLUS_INCLUDE_PATH=/usr/local/include/gdal C_INCLUDE_PATH=/usr/local/include/gdal pip install --no-binary GDAL GDAL==`gdal-config --version`
 
 # Install mrf_apps
 RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
