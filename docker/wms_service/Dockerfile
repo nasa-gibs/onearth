@@ -78,7 +78,8 @@ RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GD
 RUN dnf remove -y python3-packaging || echo "python3-packaging was not found or removal failed, attempting to continue."
 RUN pip install --force-reinstall 'packaging>=25.0'
 
-RUN GDAL_CONFIG=/usr/local/bin/gdal-config CPLUS_INCLUDE_PATH=/usr/local/include/gdal C_INCLUDE_PATH=/usr/local/include/gdal pip install --no-binary GDAL GDAL==`gdal-config --version`
+# Fix python gdal install
+RUN pip install numpy==1.26.4 gdal[numpy]==`gdal-config --version` --no-build-isolation --no-cache-dir --force-reinstall
 
 # Install mrf_apps
 RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
