@@ -73,6 +73,7 @@ RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GD
     rm -rf /tmp/*
 
 # Fix python gdal install
+RUN pip install setuptools wheel
 RUN pip install numpy==1.26.4 gdal[numpy]==`gdal-config --version` --no-build-isolation --no-cache-dir --force-reinstall
 
 # Install mrf_apps
