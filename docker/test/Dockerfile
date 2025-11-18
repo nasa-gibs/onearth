@@ -10,13 +10,13 @@ ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 # Install dependencies
 RUN dnf install -y \
-        proj-9.5.0 \
-        proj-devel-9.5.0 \
+        proj-9.6.0 \
+        proj-devel-9.6.0 \
         fribidi-devel-1.0.14 \
         cairo-devel-1.18.2 \
         cmake-3.30.5 \
-        geos-3.13.0 \
-        geos-devel-3.13.0 \
+        geos-3.13.1 \
+        geos-devel-3.13.1 \
         harfbuzz-devel-8.4.0 \
         protobuf-c-devel-1.5.0 && \
 	dnf clean all

@@ -37,10 +37,10 @@ RUN dnf -y update && \
         cairo-devel-1.18.2 \
         cmake-3.30.5 \
         harfbuzz-devel-8.4.0 \
-        proj-9.5.0 \
-        proj-devel-9.5.0 \
-        geos-3.13.0 \
-        geos-devel-3.13.0 \
+        proj-9.6.0 \
+        proj-devel-9.6.0 \
+        geos-3.13.1 \
+        geos-devel-3.13.1 \
         python3-devel-3.12.9 \
         protobuf-c-devel-1.5.0 && \
 	dnf clean all
