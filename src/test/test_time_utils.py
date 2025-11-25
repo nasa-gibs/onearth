@@ -30,30 +30,30 @@ import shutil
 from oe_test_utils import restart_apache, make_dir_tree, mrfgen_run_command as run_command, seed_redis_data as seed_redis_data_oe_utils
 import datetime
 from dateutil.relativedelta import relativedelta
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'time_service'))
+from time_service import OnearthTimeService
 
 DEBUG = False
 
-DATE_SERVICE_LUA_TEMPLATE = """local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="hash"})
-"""
-
+# Python time service setup 
 DATE_SERVICE_APACHE_TEMPLATE = """Alias /date_service {config_path}
 
-<IfModule !ahtse_lua>
-        LoadModule ahtse_lua_module modules/mod_ahtse_lua.so
+<IfModule !wsgi_module>
+        LoadModule wsgi_module modules/mod_wsgi.so
 </IfModule>
 
+WSGIDaemonProcess time_service python-path={config_path}
+WSGIScriptAlias /time_service/time {config_path}/wsgi_app_time_service.py
+WSGIScriptAlias /oe2-time-service-proxy-onearth-time-service {config_path}/wsgi_app_time_service.py
+
 <Directory {config_path}>
+        WSGIProcessGroup time_service
+        WSGIApplicationGroup %{{GLOBAL}}
         Options Indexes FollowSymLinks
         AllowOverride None
         Require all granted
-        AHTSE_lua_RegExp date_service
-        AHTSE_lua_Script {config_path}/date_service.lua
-        AHTSE_lua_Redirect On
-        AHTSE_lua_KeepAlive On
 </Directory>
 """
-
 
 def redis_running():
     try:
@@ -110,20 +110,6 @@ def add_redis_config(layers, db_keys, config):
 class TestTimeUtils(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        # Check if mod_ahtse_lua is installed
-        apache_path = '/etc/httpd/modules/'
-        if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
-            print("WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path))
-
-        # Check if onearth Lua stuff has been installed
-        lua = Popen(['luarocks', 'list'], stdout=PIPE)
-        (output, _) = lua.communicate()
-        p_status = lua.wait()
-        if p_status:
-            print("WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail.")
-        if 'onearth' not in str(output):
-            print("WARNING: OnEarth luarocks package not installed. Tests may fail.")
-
         # Start redis
         if not redis_running():
             Popen(['redis-server'])
@@ -131,30 +117,60 @@ class TestTimeUtils(unittest.TestCase):
         if not redis_running():
             print("WARNING: Can't access Redis server. Tests may fail.")
 
-        # Copy Lua config
-        test_lua_config_dest_path = '/build/test/ci_tests/tmp/date_service_test'
-        test_lua_config_filename = 'date_service.lua'
-        self.test_lua_config_location = os.path.join(test_lua_config_dest_path,
-                                                     test_lua_config_filename)
-
-        make_dir_tree(test_lua_config_dest_path, ignore_existing=True)
-        with open(self.test_lua_config_location, 'w+') as f:
-            f.write(DATE_SERVICE_LUA_TEMPLATE)
-
-        # Copy Apache config
-        self.test_config_dest_path = os.path.join(
-            '/etc/httpd/conf.d', 'oe2_test_date_service.conf')
-        with open(self.test_config_dest_path, 'w+') as dest:
-            dest.write(
-                DATE_SERVICE_APACHE_TEMPLATE.replace(
-                    '{config_path}', test_lua_config_dest_path))
-
-        self.date_service_url = 'http://localhost/date_service/date?'
+        # Create Python time service instance
+        time_service = OnearthTimeService()
+        handler_func = time_service.time_service(
+            {"handler_type": "redis", "host": "127.0.0.1"},
+            {"filename_format": "basic"}
+        )
+        self.time_service_handler = staticmethod(handler_func)
+        
+        self.setup_date_service()
 
         restart_apache()
 
         shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py", os.getcwd() + '/oe_redis_utl.py')
         shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.py", os.getcwd() + '/periods.py')
+    
+    @classmethod
+    def setup_date_service(self):
+        # Copy Python WSGI config from source file
+        test_wsgi_config_dest_path = '/build/test/ci_tests/tmp/time_service_test'
+        test_wsgi_config_filename = 'wsgi_app_time_service.py'
+        self.test_python_config_location = os.path.join(test_wsgi_config_dest_path,
+                                                     test_wsgi_config_filename)
+
+        make_dir_tree(test_wsgi_config_dest_path, ignore_existing=True)
+
+        # Read the actual wsgi_app_time_service.py file from the docker directory
+        source_wsgi_path = '/home/oe2/onearth/docker/time_service/wsgi_app_time_service.py'
+        with open(source_wsgi_path, 'r') as f:
+            wsgi_content = f.read()
+
+        # Replace the placeholder with test value
+        wsgi_content = wsgi_content.replace('{REDIS_HOST}', '127.0.0.1')
+
+        # Write to test location
+        with open(self.test_python_config_location, 'w+') as f:
+            f.write(wsgi_content)
+
+        # Copy Apache config
+        self.time_service_test_config_dest_path = os.path.join(
+            '/etc/httpd/conf.d', 'oe2_test_date_service.conf')
+        with open(self.time_service_test_config_dest_path, 'w+') as dest:
+            dest.write(
+                DATE_SERVICE_APACHE_TEMPLATE.replace(
+                    '{config_path}', test_wsgi_config_dest_path))
+
+        self.time_service_url = 'http://localhost/time_service/time?'
+
+        restart_apache()
+
+        r = requests.get(self.time_service_url)
+        if r.status_code != 200:
+            print(
+                "WARNING: Can't access date service at url: {}. Tests may fail"
+            .format(self.time_service_url))
 
     def test_time_scrape_s3_keys(self):
         # Test scraping S3 keys
@@ -166,7 +182,7 @@ class TestTimeUtils(unittest.TestCase):
         cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -b test-bucket 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326']
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -188,13 +204,13 @@ class TestTimeUtils(unittest.TestCase):
                          '2016-01-01/2016-01-01/P1D']),
                         ('test_layer3', '2015-01-02',
                         '2015-01-01/2015-01-02/P1D')]
-        
+
         time_scrape_dir = "/home/oe2/onearth/src/test/time_scrape_test_data"
-        
+
         cmd = f"python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -s {time_scrape_dir} 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326']
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -215,7 +231,7 @@ class TestTimeUtils(unittest.TestCase):
                         ('Other_Test_Layer', '2017-01-04',
                         '2017-01-01/2017-01-04/P1D')]
         db_keys = ['epsg4326']
-        
+
         redis_server = redis.StrictRedis(host='localhost', port=6379, db=0)
         # make sure there are no leftover dates for this layer from other tests
         for layer in test_layers:
@@ -224,21 +240,21 @@ class TestTimeUtils(unittest.TestCase):
         redis_server.zadd('epsg4326:layer:{0}:dates'.format(test_layers[0][0]), {'2016-01-01':0})
         # populate the periods
 
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
-        
+
         # Have oe_scrape_time.py scrape time for only Other_Test_Layer. Test_Layer should remain unchanged
         cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -l Other_Test_Layer -r -b test-bucket 127.0.0.1"
         run_command(cmd, True)
-        
+
         # Re-run periods.py on Test_Layer to ensure that periods can still be generated (meaning the dates are still there)
         cmd = f'python3 periods.py epsg4326:layer:{test_layers[0][0]} -r localhost -p 6379'
         run_command(cmd=cmd, show_output=True)
 
 
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
-        
+
         for layer in test_layers:
             layer_res = res.get(layer[0])
             self.assertIsNotNone(
@@ -279,7 +295,7 @@ class TestTimeUtils(unittest.TestCase):
         cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -b test-inventory 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326']
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -375,7 +391,7 @@ class TestTimeUtils(unittest.TestCase):
 
         db_keys = ['epsg4326']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -404,7 +420,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P1D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -443,7 +459,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P1D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for i, layer in enumerate(test_layers):
             layer_res = res.get(layer[0])
@@ -466,7 +482,7 @@ class TestTimeUtils(unittest.TestCase):
 
         db_keys = ['epsg4326']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
 
         layer_res = res.get(test_layers[0][0])
@@ -498,7 +514,7 @@ class TestTimeUtils(unittest.TestCase):
 
         db_keys = ['epsg4326']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -525,7 +541,7 @@ class TestTimeUtils(unittest.TestCase):
 
         db_keys = ['epsg4326']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -550,7 +566,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -577,7 +593,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -603,7 +619,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -629,7 +645,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/DETECT'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -655,7 +671,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/DETECT/P5D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -681,7 +697,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P10D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -707,7 +723,7 @@ class TestTimeUtils(unittest.TestCase):
         config = '2019-01-07/2020-12-01/P8D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -728,7 +744,7 @@ class TestTimeUtils(unittest.TestCase):
         config = '1900-01-01/2899-12-31/P1000Y'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -754,7 +770,7 @@ class TestTimeUtils(unittest.TestCase):
         config = '2019-02-01/DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -780,7 +796,7 @@ class TestTimeUtils(unittest.TestCase):
         config = '2017-01-01/DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -811,7 +827,7 @@ class TestTimeUtils(unittest.TestCase):
 
         periods = ['2019-01-01/2019-03-01/P1M']
 
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -837,7 +853,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/2020-12-01/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -863,7 +879,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'LATEST-15D/LATEST/P1D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -894,7 +910,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'LATEST-30D/DETECT/P1D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -922,7 +938,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/LATEST/P1D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -959,7 +975,7 @@ class TestTimeUtils(unittest.TestCase):
         config = '2019-01-04/2022-12-01/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for i, layer in enumerate(test_layers):
             layer_res = res.get(layer[0])
@@ -1004,7 +1020,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2023-04-01T03:50:00Z/2023-06-30T03:50:00Z/PT10M'
                     ]
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1027,7 +1043,7 @@ class TestTimeUtils(unittest.TestCase):
         seed_redis_data([[layer_name]], db_keys=db_keys)
         
         periods = []
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         layer_res = res.get(layer_name)
         self.assertIsNotNone(
@@ -1065,7 +1081,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2022-01-17T00:00:00Z/2023-10-30T15:50:00Z/PT10M'
                     ]
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1097,7 +1113,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2022-06-21/2022-06-21/P1D',
                     '2022-06-27/2022-07-26/P1D']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1130,7 +1146,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2022-06-21/2022-06-21/P4D',
                     '2022-06-27/2022-10-21/P4D']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1163,7 +1179,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2022-06-10/2022-06-10/P8D',
                     '2022-06-27/2023-02-14/P8D']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1196,7 +1212,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2022-06-01/2022-06-01/P16D',
                     '2022-06-27/2023-10-04/P16D']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1228,7 +1244,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2020-01-01/2020-01-01/P1M',
                     '2020-06-01/2022-11-01/P1M']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1260,7 +1276,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2020-01-01/2020-01-01/P3M',
                     '2020-06-01/2027-09-01/P3M']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1296,7 +1312,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2021-01-26T10:40:00Z/2021-01-26T10:40:29Z/PT1S',
                     '2021-01-26T10:41:00Z/2021-01-26T10:41:00Z/PT1S']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1332,7 +1348,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2021-01-26T10:40:00Z/2021-01-26T15:30:00Z/PT10M',
                     '2021-01-27T10:40:00Z/2021-01-27T10:40:00Z/PT10M']
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1435,7 +1451,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2023-01-01/2023-09-06/P8D']
 
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1470,7 +1486,7 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2023-01-01/2023-02-02/P1D']
 
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1497,7 +1513,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/DETECT/P1D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1524,7 +1540,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1593,7 +1609,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2021-01-29T13:45:00Z/2021-01-29T13:45:00Z/PT3M',
                     '2021-01-29T13:58:00Z/2021-01-29T13:58:00Z/PT3M']
 
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1637,7 +1653,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2021-01-05/2021-01-08/P1D',
                     '2021-01-09/2021-01-11/P1D']
 
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1666,7 +1682,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/2020-12-01/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in ['Copy_Destination_1', 'Test_CopyDates']:
             layer_res = res.get(layer)
@@ -1706,7 +1722,7 @@ class TestTimeUtils(unittest.TestCase):
 
         # run periods.py with keep_existing_periods
         seed_redis_data(test_layers, db_keys=db_keys, optional_args='-k')
-        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        req = requests.get(self.time_service_url + 'key1=epsg4326')
         res = req.json()
         for layer in test_layers:
             self.assertEqual(r.type("epsg4326:layer:{}:periods".format(layer[0])), layer[3])
@@ -1745,7 +1761,7 @@ class TestTimeUtils(unittest.TestCase):
 
         # run periods.py again
         seed_redis_data(test_layers, db_keys=db_keys)
-        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        req = requests.get(self.time_service_url + 'key1=epsg4326')
         res = req.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1772,7 +1788,7 @@ class TestTimeUtils(unittest.TestCase):
 
         # run periods.py with keep_existing_periods
         seed_redis_data(test_layers, db_keys=db_keys, optional_args='-d 2018-01-02')
-        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        req = requests.get(self.time_service_url + 'key1=epsg4326')
         res = req.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1808,7 +1824,7 @@ class TestTimeUtils(unittest.TestCase):
                     '2022-06-29:00:00:00Z/2022-06-29:00:00:00Z/PT10M',
                     '2022-07-01:00:00:00Z/2022-07-01:01:30:00Z/PT10M']
         seed_redis_data(test_layers, db_keys=db_keys, optional_args='-f')
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        r = requests.get(self.time_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -1842,7 +1858,7 @@ class TestTimeUtils(unittest.TestCase):
         run_command(convert_cmd)
 
         # Ensure that all the periods were converted correctly
-        req = requests.get(self.date_service_url)
+        req = requests.get(self.time_service_url)
         res = req.json()
         for layer in test_layers:
             self.assertEqual(r.type("layer:{}:periods".format(layer[0])), b'zset')
@@ -1878,7 +1894,7 @@ class TestTimeUtils(unittest.TestCase):
         run_command(convert_cmd)
 
         # Ensure that all the periods were converted correctly
-        req = requests.get(self.date_service_url)
+        req = requests.get(self.time_service_url)
         res = req.json()
         for layer in test_layers:
             self.assertEqual(r.type("layer:{}:periods".format(layer[0])), b'set')
@@ -1914,7 +1930,7 @@ class TestTimeUtils(unittest.TestCase):
         run_command(convert_cmd)
 
         # Ensure that only the filtered period was converted
-        req = requests.get(self.date_service_url)
+        req = requests.get(self.time_service_url)
         res = req.json()
         for layer in test_layers:
             # Only
@@ -1937,9 +1953,10 @@ class TestTimeUtils(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         if not DEBUG:
-            os.remove(self.test_config_dest_path)
-            os.remove(self.test_lua_config_location)
             os.remove(os.getcwd() + '/periods.py')
+            os.remove(os.getcwd() + '/oe_redis_utl.py')
+            os.remove(self.time_service_test_config_dest_path)
+            os.remove(self.test_python_config_location)
 
 
 if __name__ == '__main__':

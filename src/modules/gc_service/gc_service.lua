@@ -236,7 +236,8 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
         if not left_to_req or skip == 0 then
             local max_to_req = 0
             for _, v in pairs(dateList) do
-                max_to_req = math.max(max_to_req, tonumber(v["periods_in_range"]))
+                local periods_in_range = v["periods_in_range"] and tonumber(v["periods_in_range"]) or 0
+                max_to_req = math.max(max_to_req, periods_in_range)
             end
             -- when a limit isn't specified, we'll request the maximum amount of periods
             if not left_to_req then

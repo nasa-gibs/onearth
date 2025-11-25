@@ -18,6 +18,7 @@ RUN dnf install -y \
         geos-3.13.1 \
         geos-devel-3.13.1 \
         harfbuzz-devel-8.4.0 \
+        python3-mod_wsgi-5.0.0-4.el10 \
         protobuf-c-devel-1.5.0 && \
 	dnf clean all
 
@@ -152,11 +153,10 @@ WORKDIR /home/oe2/onearth/src/modules/mod_convert/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl . && \
     make && make install
 
-# Install Lua module for time snapping
-WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
-RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
+
+# Install the time service Python module (includes redis-py and hiredis dependencies)
 WORKDIR /home/oe2/onearth/src/modules/time_service
-RUN luarocks make onearth_time_service-0.1-2.rockspec
+RUN pip install .
 
 # Install wms_time_service module
 RUN mkdir -p /etc/onearth/config/endpoint

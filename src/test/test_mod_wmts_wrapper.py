@@ -31,6 +31,10 @@ import time
 base_url = 'http://localhost'
 apache_conf_dir = '/etc/httpd/conf.d'
 
+# Add the time service module to the path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'time_service'))
+from time_service import OnearthTimeService
+
 BASE_APACHE_TEMPLATE = """<IfModule !mrf_module>
    LoadModule mrf_module modules/mod_mrf.so
 </IfModule>
@@ -164,24 +168,22 @@ MOD_REPROJECT_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 </Directory>
 """
 
-DATE_SERVICE_LUA_TEMPLATE = """local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="basic"})
-"""
-
-DATE_SERVICE_APACHE_TEMPLATE = """Alias /date_service {config_path}
-
-<IfModule !ahtse_lua>
-        LoadModule ahtse_lua_module modules/mod_ahtse_lua.so
+# Python time service setup instead of Lua
+DATE_SERVICE_APACHE_TEMPLATE = """<IfModule !wsgi_module>
+        LoadModule wsgi_module modules/mod_wsgi.so
 </IfModule>
 
+WSGIDaemonProcess time_service python-path={config_path}
+WSGIScriptAlias /time_service/time {config_path}/wsgi_app_time_service.py
+WSGIScriptAlias /oe2-time-service-proxy-onearth-time-service {config_path}/wsgi_app_time_service.py
+WSGIScriptAlias /date_service/date_service {config_path}/wsgi_app_time_service.py
+
 <Directory {config_path}>
+        WSGIProcessGroup time_service
+        WSGIApplicationGroup %{{GLOBAL}}
         Options Indexes FollowSymLinks
         AllowOverride None
         Require all granted
-        AHTSE_lua_RegExp date_service
-        AHTSE_lua_Script {config_path}/date_service.lua
-        AHTSE_lua_Redirect On
-        AHTSE_lua_KeepAlive On
 </Directory>
 """
 
@@ -260,20 +262,6 @@ class TestModWmtsWrapper(unittest.TestCase):
 
     @classmethod
     def setup_date_service(self):
-        # Check if mod_ahtse_lua is installed
-        apache_path = '/etc/httpd/modules/'
-        if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
-            print("WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path))
-
-        # Check if onearth Lua stuff has been installed
-        lua = Popen(['luarocks', 'list'], stdout=PIPE)
-        (output, _) = lua.communicate()
-        p_status = lua.wait()
-        if p_status:
-            print("WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail.")
-        if 'onearth' not in str(output):
-            print("WARNING: OnEarth luarocks package not installed. Tests may fail.")
-
         # Start redis
         if not redis_running():
             Popen(['redis-server'])
@@ -281,23 +269,51 @@ class TestModWmtsWrapper(unittest.TestCase):
         if not redis_running():
             print("WARNING: Can't access Redis server. Tests may fail.")
 
-        # Copy Lua config
-        test_lua_config_dest_path = '/build/test/ci_tests/tmp/date_service_test'
-        test_lua_config_filename = 'date_service.lua'
-        self.test_lua_config_location = os.path.join(test_lua_config_dest_path,
-                                                     test_lua_config_filename)
+        # Create Python time service instance
+        time_service = OnearthTimeService()
+        handler_func = time_service.time_service(
+            {"handler_type": "redis", "host": "127.0.0.1"},
+            {"filename_format": "basic"}
+        )
+        self.handler = staticmethod(handler_func)
 
-        make_dir_tree(test_lua_config_dest_path, ignore_existing=True)
-        with open(self.test_lua_config_location, 'w+') as f:
-            f.write(DATE_SERVICE_LUA_TEMPLATE)
+         # Copy Python WSGI config from source file
+        test_wsgi_config_dest_path = '/build/test/ci_tests/tmp/time_service_test'
+        test_wsgi_config_filename = 'wsgi_app_time_service.py'
+        self.test_python_config_location = os.path.join(test_wsgi_config_dest_path,
+                                                     test_wsgi_config_filename)
+
+        make_dir_tree(test_wsgi_config_dest_path, ignore_existing=True)
+
+        # Read the actual wsgi_app_time_service.py file from the docker directory
+        source_wsgi_path = '/home/oe2/onearth/docker/time_service/wsgi_app_time_service.py'
+        with open(source_wsgi_path, 'r') as f:
+            wsgi_content = f.read()
+
+        # Replace the placeholder with test value
+        wsgi_content = wsgi_content.replace('{REDIS_HOST}', '127.0.0.1')
+
+        # Write to test location
+        with open(self.test_python_config_location, 'w+') as f:
+            f.write(wsgi_content)
 
         # Copy Apache config
-        self.date_service_apache_path = os.path.join(
+        self.time_service_test_config_dest_path = os.path.join(
             '/etc/httpd/conf.d', 'oe2_test_date_service.conf')
-        with open(self.date_service_apache_path, 'w+') as dest:
+        with open(self.time_service_test_config_dest_path, 'w+') as dest:
             dest.write(
                 DATE_SERVICE_APACHE_TEMPLATE.replace(
-                    '{config_path}', test_lua_config_dest_path))
+                    '{config_path}', test_wsgi_config_dest_path))
+
+        self.time_service_url = 'http://localhost/time_service/time?'
+
+        restart_apache()
+
+        r = requests.get(self.time_service_url)
+        if r.status_code != 200:
+            print(
+                "WARNING: Can't access date service at url: {}. Tests may fail"
+            .format(self.time_service_url))
 
     @classmethod
     def setup_mrf_nodate(self):
@@ -1778,7 +1794,7 @@ class TestModWmtsWrapper(unittest.TestCase):
         os.remove(self.mod_mrf_apache_config_path_nodate)
         os.remove(self.mod_reproj_apache_config_path_date)
         os.remove(self.mod_reproj_apache_config_path_nodate)
-        os.remove(self.date_service_apache_path)
+        os.remove(self.time_service_test_config_dest_path)
         os.remove(self.base_apache_path)
         os.remove(self.mod_mrf_brunsli_source_apache_config_path_date_yeardir)
         os.remove(self.mod_mrf_zenjpeg_source_apache_config_path_date_yeardir)

@@ -12,7 +12,7 @@ The service takes queries via URL query parameters and returns a JSON response.
 
 ## How it works
 
-`time_service` is a Lua script that's intended to be run by the `mod_ahtse_lua`
+`time_service` is a Python script that's intended to be run by the `mod_wsgi`
 Apache module.
 
 The script can provide different output based on the URL query parameters
@@ -61,42 +61,29 @@ be easily added.
 ## Dependencies
 
 -   Apache 2.4
--   `mod_ahtse_lua`
--   Lua 5.1 or greater
--   luarocks (Lua package system)
+-   `mod_wsgi`
+-   Python 3
 -   Redis
-
-#### Lua dependencies
-
--   luaposix
--   redis-lua (forked in this repo)
--   json-lua
+-   Redis-py
 
 ## Installation
 
-1. Make sure `mod_ahtse_lua` is installed and is being loaded by your Apache
+1. Make sure `mod_wsgi` is installed and is being loaded by your Apache
    configuration.
 
 2. Install Redis. For CentOS 7, use `yum install redis`. Make sure the database
    is running.
 
-3. Install `luarocks`. For CentOS 7, use `yum install luarocks`.
+3. Install redis-py with pip
 
 4. Within the `onearth` repo, navigate to `src/modules/time_service`
 
-5. Install the OnEarth Lua package with `luarocks` (you will probably need to
-   use `sudo`):
+5. Install the OnEarth Python package with `pip` 
 
 ```
-luarocks make
+pip install -e .
 ```
 
-6. Install the Lua Redis handler library:
-
-```
-cd redis-lua
-luarocks make rockspec/redis-lua-2.0.5-0.rockspec
-```
 
 ## Configuration
 
@@ -132,23 +119,6 @@ These additional keys can be specified in the request parameters:
 `time_service?key1=epsg4326&key2=best`. They are processed in order. Up to 5
 additional keys are allowed.
 
-### Create the Lua configuration script
-
-To start, you'll need to create a simple Lua configuration script that
-determines how your service will run. Here's a sample script:
-
-```
--- Set configuration here
-local databaseHandler = {type="redis", host="127.0.0.1"}
-local filenameFormatHandler = {filename_format="hash"}
--- End configuration
-
-local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService(databaseHandler, filenameFormatHandler)
-```
-
-The only lines you need to edit are the two after `Set configuration here`.
-
 #### Database Handlers
 
 _Redis_
@@ -182,8 +152,9 @@ In your Apache configuration, you need to set up an endpoint that the service
 will run under. This can exist under a `<Directory>` or `<Location>` block.
 
 You'll need to make sure the following directives are in place (for more
-information, consult the `mod_ahtse_lua` documentation):
+information, consult the `mod_wsgi` documentation):
 
-`AHTSE_lua_RegExp` -- Any request that matches this regex expression will be
-handled by `time_service`. `AHTSE_lua_Script` -- This needs to be a path to the Lua
-configuration script described previously.
+Add paths you would like to map to your time service like 
+```
+WSGIScriptAlias /time_service/time /var/www/html/time_service/wsgi_app_time_service.py
+```

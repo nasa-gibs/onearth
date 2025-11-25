@@ -64,8 +64,8 @@ echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/con
 
 # copy config stuff
 mkdir -p /var/www/html/time_service
-cp time_service.lua /var/www/html/time_service/time_service.lua
-sed -i 's@{REDIS_HOST}@'$REDIS_HOST_READER'@g' /var/www/html/time_service/time_service.lua
+cp wsgi_app_time_service.py /var/www/html/time_service/wsgi_app_time_service.py
+sed -i 's@{REDIS_HOST}@'$REDIS_HOST_READER'@g' /var/www/html/time_service/wsgi_app_time_service.py
 
 # Start Redis and load sample data if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then

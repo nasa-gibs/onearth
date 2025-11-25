@@ -25,7 +25,7 @@ import subprocess
 import time
 import redis
 import requests
-from oe_test_utils import restart_apache, make_dir_tree
+from oe_test_utils import restart_apache, make_dir_tree, remove_redis_layer, seed_redis_data
 import shutil
 from lxml import etree
 import json
@@ -35,29 +35,31 @@ from functools import partial
 import datetime
 from dateutil.relativedelta import relativedelta
 
+# Add the time service module to the path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'time_service'))
+from time_service import OnearthTimeService
+
 DEBUG = False
 START_SERVER = False
 
 EARTH_RADIUS = 6378137.0
 
-DATE_SERVICE_LUA_TEMPLATE = """local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="hash"})
-"""
-
 DATE_SERVICE_APACHE_TEMPLATE = """Alias /date_service {config_path}
 
-<IfModule !ahtse_lua>
-        LoadModule ahtse_lua_module modules/mod_ahtse_lua.so
+<IfModule !wsgi_module>
+        LoadModule wsgi_module modules/mod_wsgi.so
 </IfModule>
 
+WSGIDaemonProcess time_service python-path={config_path}
+WSGIScriptAlias /time_service/time {config_path}/wsgi_app_time_service.py
+WSGIScriptAlias /oe2-time-service-proxy-onearth-time-service {config_path}/wsgi_app_time_service.py
+
 <Directory {config_path}>
+        WSGIProcessGroup time_service
+        WSGIApplicationGroup %{{GLOBAL}}
         Options Indexes FollowSymLinks
         AllowOverride None
         Require all granted
-        AHTSE_lua_RegExp date_service
-        AHTSE_lua_Script {config_path}/date_service.lua
-        AHTSE_lua_Redirect On
-        AHTSE_lua_KeepAlive On
 </Directory>
 """
 
@@ -259,39 +261,6 @@ def redis_running():
     except redis.exceptions.ConnectionError:
         return False
 
-
-def seed_redis_data(layers, db_keys=None, calc_periods=False):
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    db_keystring = ''
-    if db_keys:
-        for key in db_keys:
-            db_keystring += key + ':'
-    if not calc_periods:
-        for layer in layers:
-            r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
-            for period in layer[2]:
-                r.zadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                    {period: 0})    
-    else:
-        for layer in layers:
-            r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})
-        with open('periods.lua', 'r') as f:
-            lua_script = f.read()
-        date_script = r.register_script(lua_script)
-        date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])])
-
-
-def remove_redis_layer(layer, db_keys=None):
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    db_keystring = ''
-    if db_keys:
-        for key in db_keys:
-            db_keystring += key + ':'
-    r.delete('{0}layer:{1}:default'.format(db_keystring, layer[0]))
-    r.delete('{0}layer:{1}:periods'.format(db_keystring, layer[0]))
-    r.delete('{0}layer:{1}:dates'.format(db_keystring, layer[0]))
-
-
 def bulk_replace(source_str, replace_list):
     out_str = source_str
     for item in replace_list:
@@ -351,60 +320,43 @@ class TestDateService(unittest.TestCase):
         return layer_config_path
 
     @classmethod
-    def set_up_date_service(self):
-        # Check if mod_ahtse_lua is installed
-        apache_path = '/etc/httpd/modules/'
-        if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
-            print("WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path))
+    def setup_date_service(self):
+        # Copy Python WSGI config from source file into test location
+        test_wsgi_config_dest_path = '/build/test/ci_tests/tmp/time_service_test'
+        test_wsgi_config_filename = 'wsgi_app_time_service.py'
+        self.test_python_config_location = os.path.join(test_wsgi_config_dest_path,
+                                                     test_wsgi_config_filename)
 
-        # Check if onearth Lua stuff has been installed
-        try:
-            output = subprocess.check_output(['luarocks', 'list'],
-                                             stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError:
-            print(
-                "WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail."
-            )
+        make_dir_tree(test_wsgi_config_dest_path, ignore_existing=True)
 
-        if 'onearth' not in str(output):
-            print(
-                "WARNING: OnEarth luarocks package not installed. Tests may fail."
-            )
+        # Read the actual wsgi_app_time_service.py file from the docker directory
+        source_wsgi_path = '/home/oe2/onearth/docker/time_service/wsgi_app_time_service.py'
+        with open(source_wsgi_path, 'r') as f:
+            wsgi_content = f.read()
 
-        # Start redis
-        if not redis_running():
-            os.system('redis-server &')
-        time.sleep(2)
-        if not redis_running():
-            print("WARNING: Can't access Redis server. Tests may fail.")
+        wsgi_content = wsgi_content.replace('{REDIS_HOST}', '127.0.0.1')
 
-        # Copy Lua config
-        test_lua_config_dest_path = '/build/test/ci_tests/tmp/date_service_test'
-        test_lua_config_filename = 'date_service.lua'
-        self.test_lua_config_location = os.path.join(test_lua_config_dest_path,
-                                                     test_lua_config_filename)
-
-        make_dir_tree(test_lua_config_dest_path, ignore_existing=True)
-        with open(self.test_lua_config_location, 'w+') as f:
-            f.write(DATE_SERVICE_LUA_TEMPLATE)
+        # Write to test location
+        with open(self.test_python_config_location, 'w+') as f:
+            f.write(wsgi_content)
 
         # Copy Apache config
-        self.date_service_test_config_dest_path = os.path.join(
+        self.time_service_test_config_dest_path = os.path.join(
             '/etc/httpd/conf.d', 'oe2_test_date_service.conf')
-        with open(self.date_service_test_config_dest_path, 'w+') as dest:
+        with open(self.time_service_test_config_dest_path, 'w+') as dest:
             dest.write(
                 DATE_SERVICE_APACHE_TEMPLATE.replace(
-                    '{config_path}', test_lua_config_dest_path))
+                    '{config_path}', test_wsgi_config_dest_path))
 
-        self.date_service_url = 'http://localhost/date_service/date?'
+        self.time_service_url = 'http://localhost/time_service/time?'
 
         restart_apache()
 
-        r = requests.get(self.date_service_url)
+        r = requests.get(self.time_service_url)
         if r.status_code != 200:
             print(
                 "WARNING: Can't access date service at url: {}. Tests may fail"
-            .format(self.date_service_url))
+            .format(self.time_service_url))
 
     @classmethod
     def set_up_gc_service(self, test_name, target_proj,
@@ -442,7 +394,7 @@ class TestDateService(unittest.TestCase):
              ('{gc_header_path}', gc_header_path),
              ('{gts_header_path}', gts_header_path),
              ('{twms_gc_header_path}', twms_gc_header_path),
-             ('{date_service_uri}', self.date_service_url),
+             ('{date_service_uri}', self.time_service_url),
              ('{src_epsg}', 'EPSG:4326'), ('{base_uri_gc}', gc_layer_base_url),
              ('{base_uri_gts}', gts_layer_base_url),
              ('{target_epsg}', target_proj),
@@ -481,7 +433,28 @@ class TestDateService(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.set_up_date_service()
+        # Check if mod_ahtse_lua is installed
+        apache_path = '/etc/httpd/modules/'
+        if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
+            print("WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path))
+
+        # Start redis if not running
+        if not redis_running():
+            import subprocess
+            subprocess.Popen(['redis-server'])
+        time.sleep(2)
+        if not redis_running():
+            print("WARNING: Can't access Redis server. Tests may fail.")
+
+        # Create Python time service instance
+        time_service = OnearthTimeService()
+        handler_func = time_service.time_service(
+            {"handler_type": "redis", "host": "127.0.0.1"},
+            {"filename_format": "basic"}
+        )
+        self.time_service_handler = staticmethod(handler_func)
+
+        self.setup_date_service()
 
         self.test_config_base_path = '/build/test/ci_tests/tmp'
 
@@ -492,7 +465,6 @@ class TestDateService(unittest.TestCase):
         make_dir_tree(self.layer_config_base_path, ignore_existing=True)
 
         self.test_apache_configs = []
-        shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.lua", os.getcwd() + '/periods.lua')
 
     def test_gc_layer_info(self):
         # Check that <Layer> block for a static layer is being generated
@@ -2396,7 +2368,7 @@ class TestDateService(unittest.TestCase):
         for date_entry in date_lst:
             test_layers.append((layer['layer_id'], date_entry, period))
 
-        seed_redis_data(test_layers, db_keys=date_service_keys, calc_periods=True)
+        seed_redis_data(test_layers, db_keys=date_service_keys) 
         
         # Months
         # Create and write layer config
@@ -2411,7 +2383,7 @@ class TestDateService(unittest.TestCase):
         for date_entry in date_lst:
             test_layers2.append((layer['layer_id'], date_entry, period))
 
-        seed_redis_data(test_layers2, db_keys=date_service_keys, calc_periods=True)
+        seed_redis_data(test_layers2, db_keys=date_service_keys) 
 
         # Download GC file
         url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
@@ -4198,7 +4170,7 @@ class TestDateService(unittest.TestCase):
             shutil.rmtree(self.test_config_base_path)
             for cfg in self.test_apache_configs:
                 os.remove(cfg)
-        os.remove(os.getcwd() + '/periods.lua')
+        os.remove(self.time_service_test_config_dest_path)
 
 
 if __name__ == '__main__':

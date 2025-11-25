@@ -22,34 +22,16 @@ import sys
 import unittest
 import xmlrunner
 from optparse import OptionParser
-from subprocess import Popen, PIPE
 import time
 import redis
+import json
 import requests
-from oe_test_utils import restart_apache, make_dir_tree, seed_redis_data, seed_redis_best_data
+from oe_test_utils import seed_redis_data, seed_redis_best_data
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'time_service'))
+from time_service import OnearthTimeService
 
 DEBUG = False
 
-DATE_SERVICE_LUA_TEMPLATE = """local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="basic"})
-"""
-
-DATE_SERVICE_APACHE_TEMPLATE = """Alias /date_service {config_path}
-
-<IfModule !ahtse_lua>
-        LoadModule ahtse_lua_module modules/mod_ahtse_lua.so
-</IfModule>
-
-<Directory {config_path}>
-        Options Indexes FollowSymLinks
-        AllowOverride None
-        Require all granted
-        AHTSE_lua_RegExp date_service
-        AHTSE_lua_Script {config_path}/date_service.lua
-        AHTSE_lua_Redirect On
-        AHTSE_lua_KeepAlive On
-</Directory>
-"""
 
 
 def redis_running():
@@ -73,48 +55,21 @@ def remove_redis_layer(layer, db_keys=None):
 class TestDateService(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        # Check if mod_ahtse_lua is installed
-        apache_path = '/etc/httpd/modules/'
-        if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
-            print("WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path))
-
-        # Check if onearth Lua stuff has been installed
-        lua = Popen(['luarocks', 'list'], stdout=PIPE)
-        (output, _) = lua.communicate()
-        p_status = lua.wait()
-        if p_status:
-            print("WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail.")
-        if 'onearth' not in str(output):
-            print("WARNING: OnEarth luarocks package not installed. Tests may fail.")
-
-        # Start redis
+        # Start redis if not running
         if not redis_running():
-            Popen(['redis-server'])
+            import subprocess
+            subprocess.Popen(['redis-server'])
         time.sleep(2)
         if not redis_running():
             print("WARNING: Can't access Redis server. Tests may fail.")
 
-        # Copy Lua config
-        test_lua_config_dest_path = '/build/test/ci_tests/tmp/date_service_test'
-        test_lua_config_filename = 'date_service.lua'
-        self.test_lua_config_location = os.path.join(test_lua_config_dest_path,
-                                                     test_lua_config_filename)
-
-        make_dir_tree(test_lua_config_dest_path, ignore_existing=True)
-        with open(self.test_lua_config_location, 'w+') as f:
-            f.write(DATE_SERVICE_LUA_TEMPLATE)
-
-        # Copy Apache config
-        self.test_config_dest_path = os.path.join(
-            '/etc/httpd/conf.d', 'oe2_test_date_service.conf')
-        with open(self.test_config_dest_path, 'w+') as dest:
-            dest.write(
-                DATE_SERVICE_APACHE_TEMPLATE.replace(
-                    '{config_path}', test_lua_config_dest_path))
-
-        self.date_service_url = 'http://localhost/date_service/date?'
-
-        restart_apache()
+        # Create time service instance
+        time_service = OnearthTimeService()
+        handler_func = time_service.time_service(
+            {"handler_type": "redis", "host": "127.0.0.1"},
+            {"filename_format": "basic"}
+        )
+        self.handler = staticmethod(handler_func)
 
     def test_get_all_records(self):
         # Tests that a blank inquiry to the date service returns all records.
@@ -125,8 +80,8 @@ class TestDateService(unittest.TestCase):
 
         seed_redis_data(test_layers)
 
-        r = requests.get(self.date_service_url)
-        res = r.json()
+        response_body, headers, status_code = self.handler('', {}, {})
+        res = json.loads(response_body)
         for layer in test_layers:
             layer_res = res.get(layer[0])
             self.assertIsNotNone(
@@ -148,8 +103,8 @@ class TestDateService(unittest.TestCase):
 
         seed_redis_data(test_layers, zset=False)
 
-        r = requests.get(self.date_service_url)
-        res = r.json()
+        response_body, headers, status_code = self.handler('', {}, {})
+        res = json.loads(response_body)
         for layer in test_layers:
             layer_res = res.get(layer[0])
             self.assertIsNotNone(
@@ -174,9 +129,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -208,9 +163,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -237,9 +192,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -265,9 +220,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -293,9 +248,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -321,9 +276,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -334,9 +289,8 @@ class TestDateService(unittest.TestCase):
                         test_layer[4]))
 
     def test_bad_layer_error(self):
-        r = requests.get(self.date_service_url +
-                         'layer=hack_blowfist&datetime=2000-10-01')
-        res = r.json()
+        response_body, headers, status_code = self.handler('layer=hack_blowfist&datetime=2000-10-01', {}, {})
+        res = json.loads(response_body)
         err_msg = res['err_msg']
         expected_err = 'Invalid Layer'
         self.assertEqual(
@@ -351,9 +305,9 @@ class TestDateService(unittest.TestCase):
 
         seed_redis_data([test_layer])
 
-        r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                         format(test_layer[0], test_layer[3]))
-        res = r.json()
+        query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+        response_body, headers, status_code = self.handler(query_string, {}, {})
+        res = json.loads(response_body)
         err_msg = res['err_msg']
         expected_err = 'Invalid Date'
         self.assertEqual(
@@ -378,9 +332,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             err_msg = res['err_msg']
             expected_err = 'Date out of range'
             if not DEBUG:
@@ -404,10 +358,9 @@ class TestDateService(unittest.TestCase):
             seed_redis_data(test_layers, db_keys=[key])
             # Test data
             for test_layer in test_layers:
-                r = requests.get(self.date_service_url +
-                                 'layer={0}&datetime={1}&key1={2}'.format(
-                                     test_layer[0], test_layer[3], key))
-                res = r.json()
+                query_string = 'layer={0}&datetime={1}&key1={2}'.format(test_layer[0], test_layer[3], key)
+                response_body, headers, status_code = self.handler(query_string, {}, {})
+                res = json.loads(response_body)
                 returned_date = res['date']
                 if not DEBUG:
                     remove_redis_layer(test_layer, db_keys=[key])
@@ -434,10 +387,9 @@ class TestDateService(unittest.TestCase):
             seed_redis_best_data(test_layers, best_filename, db_keys=[key])
             # Test data
             for test_layer in test_layers:
-                r = requests.get(self.date_service_url +
-                                 'layer={0}&datetime={1}&key1={2}'.format(
-                                     test_layer[0], test_layer[3], key))
-                res = r.json()
+                query_string = 'layer={0}&datetime={1}&key1={2}'.format(test_layer[0], test_layer[3], key)
+                response_body, headers, status_code = self.handler(query_string, {}, {})
+                res = json.loads(response_body)
                 print(f'res = {res}')
                 returned_date = res['date']
                 returned_prefix = res['prefix']
@@ -469,12 +421,9 @@ class TestDateService(unittest.TestCase):
         seed_redis_data(test_layers, db_keys=db_keys)
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url +
-                'layer={0}&datetime={1}&key1={2}&key2={3}&key3={4}&key4={5}&key5={6}'
-                .format(test_layer[0], test_layer[3], db_keys[0], db_keys[1],
-                        db_keys[2], db_keys[3], db_keys[4]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}&key1={2}&key2={3}&key3={4}&key4={5}&key5={6}'.format(test_layer[0], test_layer[3], db_keys[0], db_keys[1], db_keys[2], db_keys[3], db_keys[4])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer, db_keys=db_keys)
@@ -498,9 +447,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -525,9 +474,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -548,9 +497,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             returned_filename = res['filename']
             filename = test_layer[0]        
@@ -579,9 +528,9 @@ class TestDateService(unittest.TestCase):
         seed_redis_data(test_layers)
 
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}'.
-                             format(test_layer[0], limit))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}'.format(test_layer[0], limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -611,9 +560,9 @@ class TestDateService(unittest.TestCase):
         seed_redis_data(test_layers)
 
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}'.
-                             format(test_layer[0], limit))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}'.format(test_layer[0], limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -643,9 +592,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}'.
-                             format(test_layer[0], limit))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}'.format(test_layer[0], limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -671,9 +620,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}'.
-                             format(test_layer[0], limit))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}'.format(test_layer[0], limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -699,9 +648,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&skip={1}'.
-                             format(test_layer[0], skip))
-            res = r.json()
+            query_string = 'layer={0}&skip={1}'.format(test_layer[0], skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -727,9 +676,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&skip={1}'.
-                             format(test_layer[0], skip))
-            res = r.json()
+            query_string = 'layer={0}&skip={1}'.format(test_layer[0], skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -756,9 +705,9 @@ class TestDateService(unittest.TestCase):
         seed_redis_data(test_layers)
 
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
-                             format(test_layer[0], limit, skip))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}&skip={2}'.format(test_layer[0], limit, skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -789,9 +738,9 @@ class TestDateService(unittest.TestCase):
         seed_redis_data(test_layers, zset=False)
 
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
-                             format(test_layer[0], limit, skip))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}&skip={2}'.format(test_layer[0], limit, skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -822,9 +771,9 @@ class TestDateService(unittest.TestCase):
         seed_redis_data(test_layers)
 
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
-                             format(test_layer[0], limit, skip))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}&skip={2}'.format(test_layer[0], limit, skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -855,9 +804,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
-                             format(test_layer[0], limit, skip))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}&skip={2}'.format(test_layer[0], limit, skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -884,9 +833,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
-                             format(test_layer[0], limit, skip))
-            res = r.json()
+            query_string = 'layer={0}&limit={1}&skip={2}'.format(test_layer[0], limit, skip)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -910,9 +859,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -941,9 +890,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -961,9 +910,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -981,9 +930,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1002,9 +951,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}'.
-                             format(test_layer[0], start_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}'.format(test_layer[0], start_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1023,9 +972,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_end={1}'.
-                             format(test_layer[0], end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_end={1}'.format(test_layer[0], end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1045,9 +994,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             returned_default = res[test_layers[0][0]]['default']
             if not DEBUG:
@@ -1071,9 +1020,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1093,9 +1042,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1115,9 +1064,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1142,9 +1091,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1162,9 +1111,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
-                             format(test_layer[0], start_date, end_date))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}'.format(test_layer[0], start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1174,8 +1123,8 @@ class TestDateService(unittest.TestCase):
 
     def test_periods_no_data(self):
         expected_message = {'err_msg': 'Invalid Layer'}
-        r = requests.get(self.date_service_url + 'layer=nonexistent_layer')
-        res = r.json()
+        response_body, headers, status_code = self.handler('layer=nonexistent_layer', {}, {})
+        res = json.loads(response_body)
         self.assertEqual(
             res, expected_message,
             'Error with requesting periods where there is no data: got {0}, expected {1}.'.format(res, expected_message))
@@ -1222,9 +1171,9 @@ class TestDateService(unittest.TestCase):
                         layer_3_expected_periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'periods_start={0}&periods_end={1}'.
-                             format(start_date, end_date))
-            res = r.json()
+            query_string = 'periods_start={0}&periods_end={1}'.format(start_date, end_date)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layer[0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1278,9 +1227,9 @@ class TestDateService(unittest.TestCase):
                         layer_3_expected_periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'limit={0}'.
-                             format(limit))
-            res = r.json()
+            query_string = 'limit={0}'.format(limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layer[0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1336,9 +1285,9 @@ class TestDateService(unittest.TestCase):
                         layer_3_expected_periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'limit={0}'.
-                             format(limit))
-            res = r.json()
+            query_string = 'limit={0}'.format(limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layer[0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1374,9 +1323,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}&limit={3}'.
-                             format(test_layer[0], start_date, end_date, limit))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}&limit={3}'.format(test_layer[0], start_date, end_date, limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1407,9 +1356,9 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}&limit={3}'.
-                             format(test_layer[0], start_date, end_date, limit))
-            res = r.json()
+            query_string = 'layer={0}&periods_start={1}&periods_end={2}&limit={3}'.format(test_layer[0], start_date, end_date, limit)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1446,9 +1395,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1479,9 +1428,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1508,9 +1457,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1541,9 +1490,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
-                             format(test_layer[0], test_layer[3]))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3])
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
@@ -1552,7 +1501,7 @@ class TestDateService(unittest.TestCase):
                 'Error with multi-unit duration edge case snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
                 .format(test_layer[2], test_layer[3], returned_date,
                         test_layer[4]))
-
+            
     def test_day_snap_range(self):
         test_layers = [
             # Snap date is before range
@@ -1572,9 +1521,9 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}&periods_start={2}&periods_end={3}'.
-                             format(test_layer[0], test_layer[3], periods_start, periods_end))
-            res = r.json()
+            query_string = 'layer={0}&datetime={1}&periods_start={2}&periods_end={3}'.format(test_layer[0], test_layer[3], periods_start, periods_end)
+            response_body, headers, status_code = self.handler(query_string, {}, {})
+            res = json.loads(response_body)
             try:
                 result = res['date']
             except:
@@ -1586,13 +1535,6 @@ class TestDateService(unittest.TestCase):
                 'Error with date snapping with a time range for layer {0}: for period {1}, date {2} was requested and date {3} was returned. Should be {4}'
                 .format(test_layer[0], test_layer[2], test_layer[3], result,
                         test_layer[4]))
-
-    @classmethod
-    def tearDownClass(self):
-        if not DEBUG:
-            os.remove(self.test_config_dest_path)
-            os.remove(self.test_lua_config_location)
-
 
 if __name__ == '__main__':
     # Parse options before running tests

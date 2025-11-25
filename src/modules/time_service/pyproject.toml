@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=45"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onearth-time-service"
+version = "0.1.2"
+description = "OnEarth Time Service Python Module"
+requires-python = ">=3.6"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "OnEarth Project", email = "earthdata-support@nasa.gov"}
+]
+keywords = ["onearth", "time", "service", "redis", "temporal"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "redis==6.2.0",
+    "hiredis==3.3.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/nasa-gibs/onearth"
+Repository = "https://github.com/nasa-gibs/onearth"
+Issues = "https://github.com/nasa-gibs/onearth/issues"
+
+[project.scripts]
+onearth-time-service = "time_service:main"
+
+[tool.setuptools]
+py-modules = ["time_service"]

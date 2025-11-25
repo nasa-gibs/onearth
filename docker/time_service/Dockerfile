@@ -8,29 +8,13 @@ RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
-WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
+RUN dnf install -y \
+        python3-mod_wsgi-5.0.0-4.el10 && \
+	dnf clean all
 
-# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
-WORKDIR /tmp
-RUN git clone https://github.com/tiye/json-lua.git
-WORKDIR /tmp/json-lua/
-RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
-RUN luarocks make json-lua-0.1-4.rockspec
-
-# Install lua dependencies
-RUN luarocks install lpeg && \
-    luarocks install cqueues && \
-    luarocks install openssl && \
-    luarocks install md5 && \
-    luarocks install luasocket
-
-# Install Lua module for time snapping
-WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
-RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
+# Install the time service Python module (includes redis-py and hiredis dependencies)
 WORKDIR /home/oe2/onearth/src/modules/time_service
-RUN luarocks make onearth_time_service-0.1-2.rockspec
+RUN pip install .
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
@@ -43,11 +27,9 @@ WORKDIR /home/oe2/onearth/docker/time_service
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py /usr/bin/
-RUN cp /home/oe2/onearth/src/modules/time_service/utils/periods.lua /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_best_redis.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/periods.py /usr/bin/
-RUN cp /home/oe2/onearth/src/modules/time_service/utils/best.lua /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
 # Create OnEarth config log

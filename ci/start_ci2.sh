@@ -14,8 +14,8 @@ mkdir -p /build/test/ci_tests
 cp ../docker/time_service/onearth_time_service.conf /etc/httpd/conf.d
 sed -i 's@/var/www/html@/build/test/ci_tests@g' /etc/httpd/conf.d/onearth_time_service.conf
 mkdir -p /build/test/ci_tests/time_service/
-cp ../docker/time_service/time_service.lua /build/test/ci_tests/time_service/
-sed -i 's@{REDIS_HOST}@'127.0.0.1'@g' /build/test/ci_tests/time_service/time_service.lua
+cp ../docker/time_service/wsgi_app_time_service.py /build/test/ci_tests/time_service/
+sed -i 's@{REDIS_HOST}@'127.0.0.1'@g' /build/test/ci_tests/time_service/wsgi_app_time_service.py
 
 # Configs for services
 mkdir -p /etc/onearth/config/conf/
