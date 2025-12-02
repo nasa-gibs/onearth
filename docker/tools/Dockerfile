@@ -26,7 +26,7 @@ RUN dnf -y update && \
         pcre2-devel-10.44 \
         wget-1.24.5 \
         libyaml-devel-0.2.5 \
-        libcurl-devel-8.9.1 \
+        libcurl-devel-8.12.1 \
         libjpeg-turbo-devel-3.0.2 \
         libxml2-devel-2.12.5 \
         luarocks-3.9.2 \
@@ -41,7 +41,7 @@ RUN dnf -y update && \
         proj-devel-9.6.0 \
         geos-3.13.1 \
         geos-devel-3.13.1 \
-        python3-devel-3.12.9 \
+        python3-devel-3.12.11 \
         protobuf-c-devel-1.5.0 && \
 	dnf clean all
 
