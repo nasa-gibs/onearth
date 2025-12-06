@@ -832,10 +832,9 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     return layerElem
 end
 
-local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, twms)
+local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, twms, specificLayers)
     local tmsDefs = getTmsDefs(tmsXml)
     local periods_limit = -100 -- most recent 100 periods
-    local dateList = getDateList(endpointConfig, nil, nil, nil, periods_limit)
     local tmsLimitsDefs
     if tmsLimitsXml then 
         tmsLimitsDefs = getTmsLimitsDefs(tmsLimitsXml)
@@ -843,39 +842,82 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local buildFunc = twms and makeTWMSGCLayer or makeGCLayer
-        if not twms and not endpointConfig["base_uri_gc"] then
+    if not twms and not endpointConfig["base_uri_gc"] then
         print("Error: no 'base_uri_gc' configured")
     end
 
-    local nodeList = {}
+    -- Avoid fetching the huge list of ALL dates if we only need a few for requested layers
+    local dateList = {} 
+    
+    -- TODO graceal: TEST this threshold to see if should just get all requests 
+    -- To avoid lots of small time service requests, set a fetch threshold to determine when to just get all dates 
+    local FETCH_INDIVIDUAL_THRESHOLD = 5
+    if specificLayers and #specificLayers > 0 and #specificLayers <= FETCH_INDIVIDUAL_THRESHOLD then
+        -- Fetch dates for each requested layer individually
+        for _, layerId in ipairs(specificLayers) do
+            local layerDates = getDateList(endpointConfig, layerId, nil, nil, periods_limit)
+            -- Merge result into the main dateList
+            if layerDates then
+                for k, v in pairs(layerDates) do
+                    dateList[k] = v
+                end
+            end
+        end
+    else
+        dateList = getDateList(endpointConfig, nil, nil, nil, periods_limit)
+    end
 
+    local nodeList = {}
     local fileAttrs = lfs.attributes(layerConfigSource)
+    
     if not fileAttrs then
         print("Can't open layer config location: " .. layerConfigSource)
         return
     end
 
+    -- Handle single file source
     if fileAttrs["mode"] == "file" then
         node = buildFunc(layerConfigSource, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
         if node ~= nil then
             nodeList[1] = node
         end
     end
+
+    -- Handle directory source
     if fileAttrs["mode"] == "directory" then
-        -- Only going down a single directory level
-        for file in lfs.dir(layerConfigSource) do
-            if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
-                string.sub(file, 0, 1) ~= "." then
-                node = buildFunc(layerConfigSource .. "/" .. file,
-                 tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
-                if node ~= nil then
-                    nodeList[#nodeList + 1] = node
+        if specificLayers and #specificLayers > 0 then
+            -- Only open config files for requested layers
+            for _, layerId in ipairs(specificLayers) do
+                -- TODO graceal: can I Assume filename matches layerId
+                local filename = layerConfigSource .. "/" .. layerId .. ".yaml"
+                -- Check if file exists before trying to open
+                if lfs.attributes(filename) then
+                    node = buildFunc(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+                    if node ~= nil then
+                        nodeList[#nodeList + 1] = node
+                    end
+                end
+            end
+        else
+            -- Original behavior: Scan every file in the directory
+            for file in lfs.dir(layerConfigSource) do
+                if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
+                    string.sub(file, 0, 1) ~= "." then
+                    node = buildFunc(layerConfigSource .. "/" .. file,
+                     tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+                    if node ~= nil then
+                        nodeList[#nodeList + 1] = node
+                    end
                 end
             end
         end
     end
+    
     local function sortLayers(a,b)
-        return a[1][1] < b[1][1]
+        if a and b and a[1] and b[1] then
+            return a[1][1] < b[1][1]
+        end
+        return false
     end
     table.sort(nodeList, sortLayers)
     return nodeList
@@ -920,65 +962,38 @@ local function makeGC(endpointConfig, query_string)
     -- Build contents section
     local contentsElem = xml.elem("Contents")
 
-    -- This variable will hold the final list of layers for the response.
-    local layers
-    
-    -- Get all possible layers from the configuration
-    local allAvailableLayers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
-
+    -- Parse the requested layers into requestedLayerIds, return errors if invalid or duplicate
     local requestedLayersStr = get_query_param("layer", query_string, true)
-    if requestedLayersStr == "" then 
-        return formatXMLResponse(400, "You must request a layer if you specify the layer query parameter")
-    end 
+    local requestedLayerIds = {}
+    
     if requestedLayersStr and requestedLayersStr ~= "" then
-        -- If specific layers are requested, filter the list.
-        local availableLayersMap = {}
-        if allAvailableLayers then
-            for _, layerNode in ipairs(allAvailableLayers) do
-                -- 'Identifier' is the tag holding the layer name that should match what the user requested
-                local layerIdenitifierNode = layerNode:get_elements_with_name("ows:Identifier")[1]
-                if layerIdenitifierNode then
-                    availableLayersMap[layerIdenitifierNode:get_text()] = layerNode
-                end
-            end
-        end
-
-        local requestedLayerIds = {}
         local seenIds = {}
         for id in string.gmatch(requestedLayersStr, "([^,]+)") do
             id = string.match(id, "^%s*(.-)%s*$")
-            
             if seenIds[id] then
                 return formatXMLResponse(400, "Duplicate layer names " .. id)
             end
-            
             seenIds[id] = true
             table.insert(requestedLayerIds, id)
         end
-
         if #requestedLayerIds == 0 then
-            -- If no layers could be parsed, this is an invalid request.
             return formatXMLResponse(400, "Invalid LAYER parameter: could not parse any layer names")
         end
-        
-        layers = {} -- Initialize list of layers for the response.
-        for _, requestedId in ipairs(requestedLayerIds) do
-            if not availableLayersMap[requestedId] then
-                -- A requested layer does not exist in the available set, so return an error
-                return formatXMLResponse(400, "Requested layer not found: " .. requestedId)
-            end
-            table.insert(layers, availableLayersMap[requestedId])
-        end
-    else
-        -- If no specific layers are requested, return all available layers.
-        layers = allAvailableLayers
     end
 
-    if not layers then
-        return formatXMLResponse(400, "No layers found!")
+    -- Pass requestedLayerIds (if any) to the getAllGCLayerNodes function
+    local allAvailableLayers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, false, requestedLayerIds)
+
+    if not allAvailableLayers or #allAvailableLayers == 0 then
+        -- If user asked for specific layers and we found none, it's an error
+        if #requestedLayerIds > 0 then
+             return formatXMLResponse(400, "Requested layer(s) not found")
+        else
+             return formatXMLResponse(400, "No layers found!")
+        end
     end
    
-    for _, layer in ipairs(layers) do
+    for _, layer in ipairs(allAvailableLayers) do
         contentsElem:add_child(layer)
     end
 
@@ -1004,7 +1019,6 @@ local function makeGC(endpointConfig, query_string)
     dom:maptags(removeServiceMetadataURL)
     dom:add_direct_child(serviceMetadataURL)
     return xml.tostring(dom)
-    
 end
 
 

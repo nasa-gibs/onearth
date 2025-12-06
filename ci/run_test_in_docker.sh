@@ -25,6 +25,13 @@ else
   mkdir /build
 fi
 
+# Rebuild gc_service 
+(
+  cd /home/oe2/onearth/src/modules/gc_service
+  luarocks make onearth_gc_gts-0.1-1.rockspec
+  httpd -k restart
+)
+
 cp -R /test /build/
 
 (
@@ -42,6 +49,7 @@ docker run \
   -e ONEARTH_VERSION=test \
   --volume "$(pwd)/src/test:/test:ro" \
   --volume "$(pwd)/src/test/results:/results" \
+  --volume "$(pwd)/src/modules/gc_service:/home/oe2/onearth/src/modules/gc_service" \
   "$DOCKER_IMAGE" \
   /test/tmp/docker-script.sh
 
