@@ -965,7 +965,12 @@ local function makeGC(endpointConfig, query_string)
     -- Parse the requested layers into requestedLayerIds, return errors if invalid or duplicate
     local requestedLayersStr = get_query_param("layer", query_string, true)
     local requestedLayerIds = {}
-    
+
+    -- Check if layer parameter was provided but empty
+    if requestedLayersStr == "" then
+        return formatXMLResponse(400, "You must request a layer if you specify the layer query parameter")
+    end
+
     if requestedLayersStr and requestedLayersStr ~= "" then
         local seenIds = {}
         for id in string.gmatch(requestedLayersStr, "([^,]+)") do
@@ -987,9 +992,34 @@ local function makeGC(endpointConfig, query_string)
     if not allAvailableLayers or #allAvailableLayers == 0 then
         -- If user asked for specific layers and we found none, it's an error
         if #requestedLayerIds > 0 then
-             return formatXMLResponse(400, "Requested layer(s) not found")
+             return formatXMLResponse(400, "Requested layer(s) not found: " .. join(requestedLayerIds, ", "))
         else
              return formatXMLResponse(400, "No layers found!")
+        end
+    end
+
+    -- Check if some requested layers were not found
+    if #requestedLayerIds > 0 and #allAvailableLayers < #requestedLayerIds then
+        -- Build a set of found layer IDs
+        local foundLayerIds = {}
+        for _, layer in ipairs(allAvailableLayers) do
+            local identifierElem = layer:get_elements_with_name("ows:Identifier")[1]
+            if identifierElem then
+                foundLayerIds[identifierElem:get_text()] = true
+            end
+        end
+
+        -- Find which layers were not found
+        local missingLayers = {}
+        for _, requestedId in ipairs(requestedLayerIds) do
+            if not foundLayerIds[requestedId] then
+                table.insert(missingLayers, requestedId)
+            end
+        end
+
+        if #missingLayers > 0 then
+            local errorMsg = "Requested layer(s) not found: " .. join(missingLayers, ", ")
+            return formatXMLResponse(400, errorMsg)
         end
     end
    

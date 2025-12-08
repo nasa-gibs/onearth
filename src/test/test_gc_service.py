@@ -4064,7 +4064,7 @@ class TestDateService(unittest.TestCase):
         
         # TODO once we resolve https://bugs.earthdata.nasa.gov/projects/GITC/issues/GITC-7806 we should 
         # be checking the error code status not the message 
-        expected_message = 'Requested layer not found: {}'.format(nonexistent_layer)
+        expected_message = 'Requested layer(s) not found: {}'.format(nonexistent_layer)
         found_message = message_elems[0].text
         self.assertIn(
             expected_message, found_message,
@@ -4113,7 +4113,7 @@ class TestDateService(unittest.TestCase):
         
         # TODO once we resolve https://bugs.earthdata.nasa.gov/projects/GITC/issues/GITC-7806 we should 
         # be checking the error code status not the message 
-        expected_message = 'Requested layer not found: {}'.format(nonexistent_layer)
+        expected_message = 'Requested layer(s) not found: {}'.format(nonexistent_layer)
         found_message = message_elems[0].text
         self.assertIn(
             expected_message, found_message,
