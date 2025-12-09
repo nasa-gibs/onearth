@@ -22,9 +22,9 @@ RUN dnf install -y \
 
 # FastCGI
 RUN cd /tmp && \
-    wget https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/f/fcgi-2.4.0-52.el10_1.x86_64.rpm && \
-    wget https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/f/fcgi-devel-2.4.0-52.el10_1.x86_64.rpm && \
-    dnf install -y ./fcgi-2.4.0-52.el10_1.x86_64.rpm ./fcgi-devel-2.4.0-52.el10_1.x86_64.rpm && \
+    wget https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/f/fcgi-2.4.7-1.el10_2.x86_64.rpm && \
+    wget https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/f/fcgi-devel-2.4.7-1.el10_2.x86_64.rpm && \
+    dnf install -y ./fcgi-2.4.7-1.el10_2.x86_64.rpm ./fcgi-devel-2.4.7-1.el10_2.x86_64.rpm && \
 	dnf clean all
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
