@@ -849,14 +849,12 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     -- Avoid fetching the huge list of ALL dates if we only need a few for requested layers
     local dateList = {} 
     
-    -- TODO graceal: TEST this threshold to see if should just get all requests 
     -- To avoid lots of small time service requests, set a fetch threshold to determine when to just get all dates 
-    local FETCH_INDIVIDUAL_THRESHOLD = 5
+    local FETCH_INDIVIDUAL_THRESHOLD = 100
     if specificLayers and #specificLayers > 0 and #specificLayers <= FETCH_INDIVIDUAL_THRESHOLD then
         -- Fetch dates for each requested layer individually
         for _, layerId in ipairs(specificLayers) do
             local layerDates = getDateList(endpointConfig, layerId, nil, nil, periods_limit)
-            -- Merge result into the main dateList
             if layerDates then
                 for k, v in pairs(layerDates) do
                     dateList[k] = v
@@ -888,7 +886,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
         if specificLayers and #specificLayers > 0 then
             -- Only open config files for requested layers
             for _, layerId in ipairs(specificLayers) do
-                -- TODO graceal: can I Assume filename matches layerId
+                -- Assuming filename matches layerId which has proven to be true
                 local filename = layerConfigSource .. "/" .. layerId .. ".yaml"
                 -- Check if file exists before trying to open
                 if lfs.attributes(filename) then
@@ -899,7 +897,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
                 end
             end
         else
-            -- Original behavior: Scan every file in the directory
+            -- Scan every file in the directory
             for file in lfs.dir(layerConfigSource) do
                 if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                     string.sub(file, 0, 1) ~= "." then
