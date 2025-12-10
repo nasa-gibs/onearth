@@ -210,6 +210,20 @@ See [docker/sample_configs/endpoint](../docker/sample_configs/endpoint) for more
 
 ## OnEarth YAML Layer Configuration
 
+### Layer Configuration File Naming
+
+**IMPORTANT:** Layer configuration filenames must match the `layer_id` field within the file.
+
+For example, if your layer configuration contains:
+```yaml
+layer_id: "MODIS_Aqua_Brightness_Temp_Band31_Day"
+```
+
+The filename MUST be: MODIS_Aqua_Brightness_Temp_Band31_Day.yaml
+And the location should be `/etc/onearth/config/layers/<projection>/MODIS_Aqua_Brightness_Temp_Band31_Day.yaml`
+
+This naming convention is required for performance optimization in the GetCapabilities service when specific layers are requested via the layer query parameter. If filenames don't match layer IDs, those layers will not be found when requested individually.
+
 ### Common Layer Configurations
 
 ```
