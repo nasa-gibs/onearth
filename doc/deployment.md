@@ -10,6 +10,17 @@ To build the Docker images the OnEarth stack, execute:
 To run all of the OnEarth Docker containers, execute:
 `run.sh` from the source root. If SSL is desired for production environments, execute: `run.sh "true" $SERVER_NAME`
 
+### SSL/TLS Certs
+
+OnEarth will use SSL/TLS certs files in the current directory `./certs/` folder upon startup. This folder should contain three files that must be kept securely (AWS Secrets Manager is recommended):
+- onearth.crt - The SSL certificate
+- onearth.key - The encrypted private key
+- onearth.pass - A passphrase for decrypting the private key
+
+These files may be obtained by requesting through AWS Certificate Manager or another trusted certificate manager and then exporting. The domain name should match the public endpoint. If the `./certs/` directory doesn't exist, it must be created and the files copied into it.
+
+If the `USE_SSL` environment variable is set to `true`, the files will be copied to Docker containers that have external access (onearth-tile-services and onearth-wms) into the `/etc/pki/tls/private/` directory and used by Apache HTTPD to enable end-to-end https access.
+
 
 ## Container Startup Process
 
