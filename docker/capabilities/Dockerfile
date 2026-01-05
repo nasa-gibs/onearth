@@ -47,6 +47,7 @@ RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
+    cp 00-performance.conf /etc/httpd/conf.d/00-performance.conf && \
     cp ./capabilities/10-worker.conf /etc/httpd/conf.modules.d/ && \
     cp ./capabilities/cache.conf /etc/httpd/conf.d/ && \
     cp cors.conf /etc/httpd/conf.d/

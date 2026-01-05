@@ -19,6 +19,7 @@ RUN pip install .
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
+    cp 00-performance.conf /etc/httpd/conf.d/00-performance.conf && \
     cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/ && \
     cp ./time_service/cache.conf /etc/httpd/conf.d/
