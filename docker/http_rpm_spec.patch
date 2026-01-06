@@ -1,15 +1,15 @@
 --- a/SPECS/httpd.spec	2025-06-26 12:42:55
 +++ b/SPECS/httpd.spec	2025-06-30 11:29:52
-@@ -115,6 +115,9 @@
- Patch201: httpd-2.4.63-CVE-2024-47252.patch
- # https://bugzilla.redhat.com/show_bug.cgi?id=2374580
- Patch202: httpd-2.4.63-CVE-2025-49812.patch
-+
+@@ -130,6 +130,9 @@
+ # https://bugzilla.redhat.com/show_bug.cgi?id=2419365
+ Patch206: httpd-2.4.63-CVE-2025-58098.patch
+
 +Patch900: mod_proxy_http.patch
 +Patch901: proxypass_nomain_flag.patch
- 
++
  # Apache-2.0: everything
  # BSD-3-Clause: util_pcre.c, ap_regex.h
+ # metamail AND HPND-sell-variant:: server/util_md5.c:
 @@ -263,6 +263,7 @@
  %{gpgverify} --keyring='%{SOURCE2}' --signature='%{SOURCE1}' --data='%{SOURCE0}'
  %autosetup -p1 -S gendiff

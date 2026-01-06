@@ -83,9 +83,9 @@ RUN git clone --depth=1 https://github.com/google/brunsli.git && \
 WORKDIR /tmp
 RUN dnf install -y yum-utils-4.7.0 rpm-build-4.19.1.1 && \
     dnf clean all && \
-    yumdownloader --source httpd-2.4.63-4.el10.x86_64 && \
+    yumdownloader --source httpd-2.4.63-4.el10_1.3.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.63-4.el10.x86_64
+    yum-builddep -y httpd-2.4.63-4.el10_1.3.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
