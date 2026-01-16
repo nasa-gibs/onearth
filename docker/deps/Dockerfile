@@ -129,6 +129,9 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     rpm -ivh /tmp/rpmbuild/RPMS/*/httpd*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_lua*.rpm && \
+    sed -i 's/\\"%{User-Agent}i\\"" combined/\\"%{User-Agent}i\\" \\"%{X-Forwarded-For}i\\"" combined/' /etc/httpd/conf/httpd.conf && \
+    sed -i 's/\\"%{User-Agent}i\\" %I %O" combinedio/\\"%{User-Agent}i\\" \\"%{X-Forwarded-For}i\\" %I %O" combinedio/' /etc/httpd/conf/httpd.conf && \
+    grep -q 'X-Forwarded-For' /etc/httpd/conf/httpd.conf || { echo "ERROR: LogFormat modification failed"; exit 1; } && \
     cd / && rm -rf /tmp/apr-1.7.4* /tmp/apr-util-1.6.3* /tmp/httpd-2.4.63* /tmp/rpmbuild*
 
 # Install mod_receive
