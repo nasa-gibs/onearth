@@ -42,7 +42,7 @@ RUN luarocks make luafilesystem-scm-1.rockspec
 RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 RUN luarocks install lpeg && \
     luarocks install cqueues && \
-    luarocks install openssl && \
+    CFLAGS="-Wno-incompatible-pointer-types" luarocks install openssl && \
     luarocks install md5 && \
     luarocks install luasocket
 

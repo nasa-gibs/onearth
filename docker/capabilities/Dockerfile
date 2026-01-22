@@ -18,7 +18,7 @@ WORKDIR /tmp/luafilesystem/
 RUN luarocks make luafilesystem-scm-1.rockspec
 RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 
-RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
+RUN luarocks install lpeg && luarocks install cqueues && CFLAGS="-Wno-incompatible-pointer-types" luarocks install openssl
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
