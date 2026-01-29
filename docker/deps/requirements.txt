@@ -5,5 +5,5 @@ pypng==0.20220715.0
 boto3==1.38.43
 redis==6.2.0
 urllib3==2.6.3
-setuptools==80.9.0
+setuptools==80.10.2
 pip==25.3

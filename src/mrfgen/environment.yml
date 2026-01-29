@@ -11,7 +11,7 @@ dependencies:
   # For building the Cython-based C extension
   - c-compiler
   - cython =3.1.2
-  - setuptools =80.9.0
+  - setuptools =80.10.2
   #
   # mrfgen dependencies
   - gdal =3.6.4
