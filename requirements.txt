@@ -1,4 +1,4 @@
-protobuf==6.31.1
+protobuf==6.33.5
 wheel==0.46.2
 Fiona==1.10b3
 formencode==2.0.1
