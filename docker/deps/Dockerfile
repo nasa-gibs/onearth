@@ -40,13 +40,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.25.5.linux-amd64.tar.gz && \
-    tar xf go1.25.5.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.25.6.linux-amd64.tar.gz && \
+    tar xf go1.25.6.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.34.tar.gz && \
-    tar xf v0.2.34.tar.gz && \
-    cd supercronic-0.2.34 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.42.tar.gz && \
+    tar xf v0.2.42.tar.gz && \
+    cd supercronic-0.2.42 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
@@ -60,7 +60,7 @@ RUN GOBIN=/usr/local/bin/ go install github.com/mikefarah/yq/v4@master
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
-RUN cd client_golang@v1.22.0 && \
+RUN cd client_golang@v1.23.2 && \
     go mod tidy && \
     go clean -modcache && \
     cd /tmp/ && \
