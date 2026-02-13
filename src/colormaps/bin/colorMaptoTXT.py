@@ -93,13 +93,11 @@ def parseColorMapEntryElement(
             lineValueUpperOrig: str = entryValue.strip("[]()").split(",")[1]
             # Handle INF: If the lower bound is -INF, use a value of FLOAT_LOW_BOUND.
             if lineValueUpperOrig.upper() == "-INF":
-                # Technically this branch should never be reached, since the lower bound is always used.
-                #lineValueLower = "-9999"
                 lineValueUpper: str = FLOAT_LOW_BOUND 
                 if "e" in lineValueUpperOrig.lower():
                     # Convert FLOAT_LOW_BOUND to scientific notation if using scientific notation
                     lineValueUpper = getSciPrec(FLOAT_LOW_BOUND)
-            elif lineValueUpperOrig.upper() == "INF":
+            elif lineValueUpperOrig.upper() == "INF" or lineValueUpperOrig.upper() == "+INF":
                 lineValueUpper: str = FLOAT_HIGH_BOUND
                 if "e" in lineValueUpperOrig.lower():
                     lineValueUpper = getSciPrec(FLOAT_HIGH_BOUND)
@@ -122,8 +120,7 @@ def parseColorMapEntryElement(
             if "e" in lineValueUpperOrig.lower():
                 # Convert FLOAT_LOW_BOUND to scientific notation if using scientific notation
                 lineValueLower = getSciPrec(FLOAT_LOW_BOUND)
-        elif lineValueLowerOrig.upper() == "INF":
-            # Technically this branch should never be reached, since the lower bound is always used.
+        elif lineValueLowerOrig.upper() == "INF" or lineValueLowerOrig.upper() == "+INF":
             lineValueLower: str = FLOAT_HIGH_BOUND
             if "e" in lineValueUpperOrig.lower():
                 lineValueLower = getSciPrec(FLOAT_HIGH_BOUND)
