@@ -62,6 +62,12 @@ sleep 2
 /usr/bin/redis-cli  -n 0 DEL layer:test_zenjpeg
 /usr/bin/redis-cli  -n 0 SET layer:test_zenjpeg:default "2012-02-22"
 /usr/bin/redis-cli  -n 0 ZADD layer:test_zenjpeg:periods 0 "2012-02-22/2012-02-22/P1D"
+/usr/bin/redis-cli  -n 0 DEL layer:test_brunsli_zenjpeg_ZENJPEG
+/usr/bin/redis-cli  -n 0 SET layer:test_brunsli_zenjpeg_ZENJPEG:default "2012-02-22"
+/usr/bin/redis-cli  -n 0 ZADD layer:test_brunsli_zenjpeg_ZENJPEG:periods 0 "2012-02-22/2012-02-22/P1D"
+/usr/bin/redis-cli  -n 0 DEL layer:test_brunsli_zenjpeg
+/usr/bin/redis-cli  -n 0 SET layer:test_brunsli_zenjpeg:default "2012-02-22"
+/usr/bin/redis-cli  -n 0 ZADD layer:test_brunsli_zenjpeg:periods 0 "2012-02-22/2012-02-22/P1D"
 /usr/bin/redis-cli  -n 0 DEL layer:snap_test_1a
 /usr/bin/redis-cli  -n 0 SET layer:snap_test_1a:default "2016-02-29"
 /usr/bin/redis-cli  -n 0 ZADD layer:snap_test_1a:periods 0 "2015-01-01/2016-12-31/P1D"

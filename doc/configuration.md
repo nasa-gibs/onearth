@@ -342,8 +342,11 @@ On the config of each of actual layers that make up the best layer, there will b
 Brunsli, a JPEG repacking library, is being used to decrease file size (~22%) of 
 JPEG layers. The mod_brunsli APACHE filter is used to convert 
 detected brunsli-compressed JPEG layers back to .jpg format. Brunsli can be 
-toggled on and off via the 'use_brunsli' flag in mrfgen.py. A sample 
-configuration layer configuration is included at the end of the file. 
+toggled on and off for MRF generation via the 'use_brunsli' flag in mrfgen.py. A sample 
+configuration layer configuration is included at the end of the file.
+
+For layer configurations for brunsli-compressed layers, the `mime_type` must be set to `image/x-j`. This applies for brunsli-compressed ZENJPEG source layers as well.
+Layer configurations for converted brunsli-compressed ZENJPEG layers must still use `image/png`.
 
 ### Optional for Time Service
 ```
@@ -535,6 +538,61 @@ source_mrf:
   year_dir: false
 static: true
 tilematrixset: 2km
+```
+
+Sample brunsli-compressed ZENJPEG source layer configuration:
+```
+abstract: test_brunsli_zenjpeg_ZENJPEG abstract
+best_layer: test_brunsli_zenjpeg_ZENJPEG
+layer_id: test_brunsli_zenjpeg_ZENJPEG
+layer_name: test_brunsli_zenjpeg_ZENJPEG tileset
+layer_title: b'Air Mass (ABI, GOES-East, Brunsli, ZENJPEG)'
+metadata: []
+mime_type: image/x-j
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_uri: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512_ZEN.jpg
+  idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+hidden: true
+tilematrixset: 2km
+tilematrixset_limits_id: goes-east-2km
+```
+
+Sample brunsli-compressed ZENJPEG converted layer configuration (nothing special needed compared to a non-brunsli ZENJPEG converted layer configuration):
+```
+abstract: test_brunsli_zenjpeg abstract
+best_layer: test_brunsli_zenjpeg
+layer_id: test_brunsli_zenjpeg
+layer_name: test_brunsli_zenjpeg tileset
+layer_title: b'Air Mass (ABI, GOES-East, brunsli, ZenJPEG converted)'
+metadata: []
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_uri: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512_ZEN.jpg
+  idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+convert_mrf:
+  convert_source: .jpeg
+static: false
+tilematrixset: 2km
+tilematrixset_limits_id: goes-east-2km
 ```
 
 See [docker/sample_configs/layers](../docker/sample_configs/layers) for more samples.
