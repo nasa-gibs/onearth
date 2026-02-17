@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.9.4
+FROM nasagibs/onearth-deps:2.9.5
 
 ARG MRF_VERSION=3.0.1
 ARG ALMALINUX_VERSION=10
@@ -62,7 +62,7 @@ RUN dnf remove -y python3-dateutil
 COPY requirements.txt .
 
 # Install pip dependencies
-RUN pip install pip==25.3
+RUN pip install pip==26.0.1
 RUN pip install -r requirements.txt
 
 # libspatialindex
@@ -231,7 +231,7 @@ RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf &&
 RUN cp /home/oe2/onearth/docker/00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp /home/oe2/onearth/docker/10-worker.conf /etc/httpd/conf.modules.d/
 
-ENV ONEARTH_VERSION=2.9.4
+ENV ONEARTH_VERSION=2.9.5
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

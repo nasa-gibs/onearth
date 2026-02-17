@@ -62,7 +62,7 @@ WORKDIR /home/oe2/onearth
 RUN dnf remove -y python3-dateutil
 
 # Install pip dependencies
-RUN pip install pip==25.3
+RUN pip install pip==26.0.1
 RUN pip install -r requirements.txt
 
 # Install GDAL
