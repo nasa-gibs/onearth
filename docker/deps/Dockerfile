@@ -30,7 +30,7 @@ RUN dnf -y update && \
         redis-7.2.4 \
         cronie-1.7.0 \
         logrotate-3.22.0 \
-        python3-devel-3.12.11 \
+        python3-devel-3.12.12 \
         cmake-3.30.5 \
         parallel && \
     dnf clean all
@@ -40,13 +40,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.25.6.linux-amd64.tar.gz && \
-    tar xf go1.25.6.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.26.0.linux-amd64.tar.gz && \
+    tar xf go1.26.0.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.42.tar.gz && \
-    tar xf v0.2.42.tar.gz && \
-    cd supercronic-0.2.42 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.43.tar.gz && \
+    tar xf v0.2.43.tar.gz && \
+    cd supercronic-0.2.43 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \

@@ -41,7 +41,7 @@ RUN dnf -y update && \
         proj-devel-9.6.0 \
         geos-3.13.1 \
         geos-devel-3.13.1 \
-        python3-devel-3.12.11 \
+        python3-devel-3.12.12 \
         protobuf-c-devel-1.5.0 && \
 	dnf clean all
 
