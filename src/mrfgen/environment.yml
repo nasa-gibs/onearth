@@ -16,5 +16,5 @@ dependencies:
   # mrfgen dependencies
   - gdal =3.6.4
   - numpy =1.26.4
-  - pillow =10
+  - pillow =12
   - rasterio =1.3
