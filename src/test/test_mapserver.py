@@ -755,6 +755,18 @@ class TestMapserver(unittest.TestCase):
         self.assertTrue(decodedResponse == expectedResponse,
                         'The response for requesting a ZenJPEG source layer does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
+    def test_request_brunsli_zenjpeg_convert_png(self):
+        """
+        43. Test requesting a Brunsli-ZenJPEG layer PNG
+        """
+        ref_hash = '79c39dfdf372654bfb07426e3fa0772c'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_brunsli_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
+        if DEBUG:
+            print('\nTesting: Request ZenJPEG-sourced PNG layer as a PNG via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Brunsli-ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
+
     def test_request_invalid_getmap_format(self):
         """
         46. Test a GetMap request using an invalid format.
