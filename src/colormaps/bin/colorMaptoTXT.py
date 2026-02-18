@@ -13,7 +13,7 @@ class XmlParseError(Exception):
     pass
 
 def getSciPrec(v: str) -> str:
-    return f"{float(v):.{CMAP_SCI_PREC}e}"
+    return f"{float(v):.{CMAP_SCI_PREC}e}".replace("e+00", "").replace("e-00", "")
 
 def isValid(v: str) -> bool:
         return v != "nv" and \
@@ -71,54 +71,79 @@ def parseColorMapEntryElement(
     entryValue: str = ""
     if valueAttr is not None:
         entryValue = valueAttr.value
-        
+    
+    lineValueUpper: str = ""
     # Convert the parsed attribute information into a line of the colormap file formatted
     # as a string, following the GDAL convention.
     # [lower bound of value or nv] [space separated rgb] [0 if transparent == True, else not present]
     if entryNoData == True:
         # GDAL uses the special string nv in colormaps to denote nodata or no value
-        lineValue: str = "nv"
+        lineValueLower: str = "nv"
     else:
         # Take the lower bound of the range from the value string. Value is formatted like this:
         # [0.00,0.15) or [1] or [0,+INF]
         # Where either number in the range can be a float, int, or +/-INF.
+
         lineValueSplit: str = entryValue.strip("[]()").split(",")
-        lineValueOrig: str = lineValueSplit[0]
+        lineValueLowerOrig: str = lineValueSplit[0]
+
         lineValueUpper: str = ""
+        lineValueUpperOrig: str = ""
         if len(lineValueSplit) > 1:
-            lineValueUpper: str = entryValue.strip("[]()").split(",")[1]
+            lineValueUpperOrig: str = entryValue.strip("[]()").split(",")[1]
+            # Handle INF: If the lower bound is -INF, use a value of FLOAT_LOW_BOUND.
+            if lineValueUpperOrig.upper() == "-INF":
+                lineValueUpper: str = FLOAT_LOW_BOUND 
+                if "e" in lineValueUpperOrig.lower():
+                    # Convert FLOAT_LOW_BOUND to scientific notation if using scientific notation
+                    lineValueUpper = getSciPrec(FLOAT_LOW_BOUND)
+            elif lineValueUpperOrig.upper() == "INF" or lineValueUpperOrig.upper() == "+INF":
+                lineValueUpper: str = FLOAT_HIGH_BOUND
+                if "e" in lineValueUpperOrig.lower():
+                    lineValueUpper = getSciPrec(FLOAT_HIGH_BOUND)
+            else:
+                # Handle units, idempotent if both scale and offset are None.
+                lineValueUpper: str = convertEntryValue(lineValueUpperOrig, scale, offset)
+
+                # Always represent floating point values with two decimal places if normal notation,
+                # 4 decimal places if scientific notation. Another edge case is that small decimal
+                # numbers should be represented in scientific notation.
+                if "e" in lineValueUpperOrig.lower() or (float(lineValueUpper) < 10**-CMAP_FLOAT_PREC and float(lineValueUpper) > 0.0):
+                    lineValueUpper = getSciPrec(lineValueUpper)
+                elif isValid(lineValueUpper):
+                    lineValueUpper = f"{float(lineValueUpper):.{CMAP_FLOAT_PREC}f}"
 
         # Handle INF: If the lower bound is -INF, use a value of FLOAT_LOW_BOUND.
-        if lineValueOrig.upper() == "-INF":
-            #lineValue = "-9999"
-            lineValue: str = FLOAT_LOW_BOUND 
-            if "e" in lineValueUpper.lower():
+        if lineValueLowerOrig.upper() == "-INF":
+            #lineValueLower = "-9999"
+            lineValueLower: str = FLOAT_LOW_BOUND 
+            if "e" in lineValueUpperOrig.lower():
                 # Convert FLOAT_LOW_BOUND to scientific notation if using scientific notation
-                print("Hello")
-                lineValue = getSciPrec(FLOAT_LOW_BOUND)
-        elif lineValueOrig.upper() == "INF":
-            # Technically this branch should never be reached, since the lower bound is always used.
-            lineValue: str = FLOAT_HIGH_BOUND
-            if "e" in lineValueUpper.lower():
-                lineValue = getSciPrec(FLOAT_HIGH_BOUND)
+                lineValueLower = getSciPrec(FLOAT_LOW_BOUND)
+        elif lineValueLowerOrig.upper() == "INF" or lineValueLowerOrig.upper() == "+INF":
+            lineValueLower: str = FLOAT_HIGH_BOUND
+            if "e" in lineValueUpperOrig.lower():
+                lineValueLower = getSciPrec(FLOAT_HIGH_BOUND)
         else:
             # Handle units, idempotent if both scale and offset are None.
-            lineValue: str = convertEntryValue(lineValueOrig, scale, offset)
+            lineValueLower: str = convertEntryValue(lineValueLowerOrig, scale, offset)
 
             # Always represent floating point values with two decimal places if normal notation,
             # 4 decimal places if scientific notation. Another edge case is that small decimal
             # numbers should be represented in scientific notation.
-            if "e" in lineValueOrig.lower() or (float(lineValue) < 10**-CMAP_FLOAT_PREC and float(lineValue) > 0.0):
-                lineValue = getSciPrec(lineValue)
-            elif isValid(lineValue):
-                lineValue = f"{float(lineValue):.{CMAP_FLOAT_PREC}f}"
+            if "e" in lineValueLowerOrig.lower() or (float(lineValueLower) < 10**-CMAP_FLOAT_PREC and float(lineValueLower) > 0.0):
+                lineValueLower = getSciPrec(lineValueLower)
+            elif isValid(lineValueLower):
+                lineValueLower = f"{float(lineValueLower):.{CMAP_FLOAT_PREC}f}"
         
     lineRgb: str = entryRgb.replace(",", " ")
 
     # Add an alpha channel value of 0 if this entry is transparent
     lineTransparent: str = " 0" if entryTransparent else ""
 
-    return f"{lineValue} {lineRgb}{lineTransparent}\n"
+    if lineValueUpper == "":
+        return f"{lineValueLower} {lineRgb}{lineTransparent}\n"
+    return f"{lineValueLower} {lineRgb}{lineTransparent}\n{lineValueUpper} {lineRgb}{lineTransparent}\n"
 
 
 def doFloorMode(
