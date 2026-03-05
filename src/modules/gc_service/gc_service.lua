@@ -81,14 +81,33 @@ local function get_query_param(param, query_string, optional)
     return nil
 end
 
-local function build_next_page_link(base_uri, query_string, next_offset)
-    -- Build a full URL for the next page by updating/adding the offset parameter
+local function get_last_period_from_list(periodsList)
+    -- Extract the last date from the periods list
+    -- Periods can be single dates or date ranges (date1/date2)
+    if not periodsList or #periodsList == 0 then
+        return nil
+    end
+
+    local last_period = periodsList[#periodsList]
+
+    -- Handle date ranges - take the end date
+    if string.find(last_period, "/") then
+        local parts = split("/", last_period)
+        return parts[2]
+    end
+
+    -- Single date
+    return last_period
+end
+
+local function build_next_page_link(base_uri, query_string, cursor_date)
+    -- Build a full URL for the next page by updating/adding the 'after' parameter with cursor
     if not query_string then
-        return base_uri .. "?offset=" .. next_offset
+        return base_uri .. "?after=" .. cursor_date
     end
 
     local params = {}
-    local has_offset = false
+    local has_after = false
     local query_parts = split("&", query_string)
 
     for _, part in pairs(query_parts) do
@@ -96,19 +115,19 @@ local function build_next_page_link(base_uri, query_string, next_offset)
         local key = query_pair[1]
         local value = query_pair[2] or ""
 
-        if string.lower(key) == "offset" then
-            -- Replace existing offset with next_offset
-            params[#params + 1] = "offset=" .. tostring(next_offset)
-            has_offset = true
+        if string.lower(key) == "after" then
+            -- Replace existing after with new cursor_date
+            params[#params + 1] = "after=" .. cursor_date
+            has_after = true
         else
             -- Keep other parameters as-is
             params[#params + 1] = key .. "=" .. value
         end
     end
 
-    -- Add offset if it wasn't in the original query string
-    if not has_offset then
-        params[#params + 1] = "offset=" .. tostring(next_offset)
+    -- Add after if it wasn't in the original query string
+    if not has_after then
+        params[#params + 1] = "after=" .. cursor_date
     end
 
     return base_uri .. "?" .. join(params, "&")
@@ -1223,51 +1242,54 @@ local function makeDD(endpointConfig, query_string)
             return xml_header .. xml.tostring(errorDom)
         end
 
-        -- Parse and validate offset parameter
-        local offset_param = get_query_param("offset", query_string)
-        local offset = 0
-        if offset_param then
-            offset = tonumber(offset_param)
-            if not offset or offset < 0 then
+        -- Parse and validate 'after' cursor parameter for pagination
+        local after_cursor = get_query_param("after", query_string)
+        if after_cursor then
+            -- Validate the cursor format (ISO8601 datetime) using module-level templates
+            if not string.match(after_cursor, date_template) and not string.match(after_cursor, datetime_template) then
                 errorDom = makeExceptionReport("InvalidParameterValue",
-                        "OFFSET parameter must be a non-negative integer",
-                        "OFFSET", errorDom)
+                        "AFTER parameter must have format of YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ",
+                        "AFTER", errorDom)
                 return xml_header .. xml.tostring(errorDom)
             end
+
+            -- Use the cursor as the starting point for the next page
+            periods_start = after_cursor
         end
 
-        -- Always pass limit to cap the number of periods returned
+        -- Fetch limit+1 to check if there's a next page and get the cursor
         -- The time service will still return the total count via periods_in_range
         -- graceal remember to increase this, this is just for testing
         local DESCRIBE_DOMAINS_THRESHOLD = 5
-        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD, offset)
+        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD + 1, 0)
         local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
         local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"
 
-        -- Build the time domain node with proper NextPage logic
+        -- Build the time domain node with cursor-based pagination
         local timeDomainNode
-        if tonumber(size) > DESCRIBE_DOMAINS_THRESHOLD then
-            local next_offset = offset + DESCRIBE_DOMAINS_THRESHOLD
-            if next_offset < tonumber(size) then
-                -- More pages exist - include NextPage element with full URL
-                local base_uri = endpointConfig["base_uri_gc"] or ""
-                local next_page_link = build_next_page_link(base_uri, query_string, next_offset)
-                timeDomainNode = xml.elem("DimensionDomain", {
-                    xml.elem("ows:Identifier", "time"),
-                    xml.elem("Domain", join(periodsList, ",")),
-                    xml.elem("Size", "" .. size),
-                    xml.elem("NextPage", next_page_link)
-                })
-            else
-                -- Last page - no NextPage element
-                timeDomainNode = xml.elem("DimensionDomain", {
-                    xml.elem("ows:Identifier", "time"),
-                    xml.elem("Domain", join(periodsList, ",")),
-                    xml.elem("Size", "" .. size)
-                })
-            end
+        local cursor = nil
+
+        -- If we got the full limit+1, there's a next page
+        if #periodsList == DESCRIBE_DOMAINS_THRESHOLD + 1 then
+            -- Extract the cursor (the +1 period) before removing it
+            cursor = get_last_period_from_list(periodsList)
+            -- Remove the extra period from the response
+            table.remove(periodsList, #periodsList)
+        end
+
+        -- Build the response with or without NextPage
+        if cursor then
+            -- More pages exist - include NextPage element with full URL
+            local base_uri = endpointConfig["base_uri_gc"] or ""
+            local next_page_link = build_next_page_link(base_uri, query_string, cursor)
+            timeDomainNode = xml.elem("DimensionDomain", {
+                xml.elem("ows:Identifier", "time"),
+                xml.elem("Domain", join(periodsList, ",")),
+                xml.elem("Size", "" .. size),
+                xml.elem("NextPage", next_page_link)
+            })
         else
-            -- Under threshold - no NextPage element
+            -- Last page - no NextPage element
             timeDomainNode = xml.elem("DimensionDomain", {
                 xml.elem("ows:Identifier", "time"),
                 xml.elem("Domain", join(periodsList, ",")),
