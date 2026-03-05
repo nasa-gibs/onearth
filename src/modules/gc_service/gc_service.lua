@@ -198,7 +198,7 @@ local function merge_time_service_results(t1, t2)
     return t1
 end
 
-local function getDateList(endpointConfig, layer, periods_start, periods_end, limit, offset)
+local function getDateList(endpointConfig, layer, periods_start, periods_end, limit)
     local dateServiceUri = endpointConfig["time_service_uri"]
     local dateServiceKeys = endpointConfig["time_service_keys"]
 
@@ -234,8 +234,7 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
     end
     local max_req_amt = 100
     local dateList = nil
-    local skip = offset or 0
-    local first_iteration = true
+    local skip = 0
     while not left_to_req or left_to_req > 0 do
         local requestUri = dateServiceUri
         local current_query_options = {}
@@ -286,7 +285,7 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
         end
 
         -- after the first request, determine how many more requests we need to perform
-        if not left_to_req or first_iteration then
+        if not left_to_req or skip == 0 then
             local max_to_req = 0
             for _, v in pairs(dateList) do
                 local periods_in_range = v["periods_in_range"] and tonumber(v["periods_in_range"]) or 0
@@ -296,7 +295,7 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
             if not left_to_req then
                 left_to_req = max_to_req
             -- when a limit is specified, we'll ensure that the limit is no greater than the maximum amount of periods
-            elseif first_iteration then
+            elseif skip == 0 then
                 -- Cap left_to_req to avoid requesting more than what's available
                 -- Calculate remaining periods from current skip position (including what we just fetched)
                 local remaining_from_start = math.max(0, max_to_req - skip)
@@ -305,7 +304,6 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
         end
         left_to_req = left_to_req - max_req_amt
         skip = skip + max_req_amt
-        first_iteration = false
     end
     return dateList
 end
@@ -1261,7 +1259,7 @@ local function makeDD(endpointConfig, query_string)
         -- The time service will still return the total count via periods_in_range
         -- graceal remember to increase this, this is just for testing
         local DESCRIBE_DOMAINS_THRESHOLD = 5
-        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD + 1, 0)
+        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD + 1)
         local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
         local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"
 
