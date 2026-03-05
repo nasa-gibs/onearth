@@ -81,38 +81,38 @@ local function get_query_param(param, query_string, optional)
     return nil
 end
 
--- local function build_next_page_link(query_string, next_offset)
---     -- Build a query string for the next page by updating/adding the offset parameter
---     if not query_string then
---         return "?offset=" .. next_offset
---     end
+local function build_next_page_link(base_uri, query_string, next_offset)
+    -- Build a full URL for the next page by updating/adding the offset parameter
+    if not query_string then
+        return base_uri .. "?offset=" .. next_offset
+    end
 
---     local params = {}
---     local has_offset = false
---     local query_parts = split("&", query_string)
+    local params = {}
+    local has_offset = false
+    local query_parts = split("&", query_string)
 
---     for _, part in pairs(query_parts) do
---         local query_pair = split("=", part)
---         local key = query_pair[1]
---         local value = query_pair[2] or ""
+    for _, part in pairs(query_parts) do
+        local query_pair = split("=", part)
+        local key = query_pair[1]
+        local value = query_pair[2] or ""
 
---         if string.lower(key) == "offset" then
---             -- Replace existing offset with next_offset
---             params[#params + 1] = "offset=" .. next_offset
---             has_offset = true
---         else
---             -- Keep other parameters as-is
---             params[#params + 1] = key .. "=" .. value
---         end
---     end
+        if string.lower(key) == "offset" then
+            -- Replace existing offset with next_offset
+            params[#params + 1] = "offset=" .. tostring(next_offset)
+            has_offset = true
+        else
+            -- Keep other parameters as-is
+            params[#params + 1] = key .. "=" .. value
+        end
+    end
 
---     -- Add offset if it wasn't in the original query string
---     if not has_offset then
---         params[#params + 1] = "offset=" .. next_offset
---     end
+    -- Add offset if it wasn't in the original query string
+    if not has_offset then
+        params[#params + 1] = "offset=" .. tostring(next_offset)
+    end
 
---     return "?" .. join(params, "&")
--- end
+    return base_uri .. "?" .. join(params, "&")
+end
     
 local function sendResponse(code, msg_string)
     return msg_string,
@@ -1249,13 +1249,14 @@ local function makeDD(endpointConfig, query_string)
         if tonumber(size) > DESCRIBE_DOMAINS_THRESHOLD then
             local next_offset = offset + DESCRIBE_DOMAINS_THRESHOLD
             if next_offset < tonumber(size) then
-                -- More pages exist - include NextPage element with full query string
-                -- local next_page_link = build_next_page_link(query_string, next_offset)
+                -- More pages exist - include NextPage element with full URL
+                local base_uri = endpointConfig["base_uri_gc"] or ""
+                local next_page_link = build_next_page_link(base_uri, query_string, next_offset)
                 timeDomainNode = xml.elem("DimensionDomain", {
                     xml.elem("ows:Identifier", "time"),
                     xml.elem("Domain", join(periodsList, ",")),
                     xml.elem("Size", "" .. size),
-                    xml.elem("NextPage", next_offset)
+                    xml.elem("NextPage", next_page_link)
                 })
             else
                 -- Last page - no NextPage element
