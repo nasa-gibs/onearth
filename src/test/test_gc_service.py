@@ -356,9 +356,8 @@ class TestDateService(unittest.TestCase):
         Parse the DESCRIBE_DOMAINS_THRESHOLD value from gc_service.lua.
         Returns the threshold value as an integer, or None if not found.
         """
-        gc_service_lua_path = os.path.join(
-            os.path.dirname(__file__), '..', 'modules', 'gc_service', 'gc_service.lua'
-        )
+        
+        gc_service_lua_path = '/home/oe2/onearth/src/modules/gc_service/gc_service.lua'
         try:
             with open(gc_service_lua_path, 'r') as f:
                 for line in f:
