@@ -200,9 +200,9 @@ TEST_LAYERS = {
         'layer_id':
         'AMSR2_Snow_Water_Equivalent_pagination_test',
         'layer_title':
-        'AMSR2 Snow Water Equivalent tileset for pagination testing',
+        'AMSR2 Snow Water Equivalent tileset',
         'layer_name':
-        'Snow Water Equivalent (AMSR2, GCOM-W1) - Pagination Test',
+        'Snow Water Equivalent (AMSR2, GCOM-W1)',
         'projection':
         'EPSG:4326',
         'tilematrixset':
