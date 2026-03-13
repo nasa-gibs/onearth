@@ -1238,8 +1238,8 @@ local function makeDD(endpointConfig, query_string)
 
         -- Always pass limit to cap the number of periods returned
         -- The time service will still return the total count via periods_in_range
-        -- graceal remember to increase this, this is just for testing
-        local DESCRIBE_DOMAINS_THRESHOLD = 5
+        -- NOTE ABOUT THE THRESHOLD - if you ever change this you need to consult worldview since they hardcode it for pagination
+        local DESCRIBE_DOMAINS_THRESHOLD = 25000
         dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD, offset)
         local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
         local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"

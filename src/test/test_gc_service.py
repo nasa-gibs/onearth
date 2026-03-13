@@ -110,6 +110,10 @@ GC_SERVICE_APACHE_CONFIG_TEMPLATE = """Alias {endpoint} {gc_path}
 </Directory>
 """
 
+# Number of periods for pagination test layer (test_4)
+# Designed for 3 pages with 25k threshold: 25k + 25k + 5 = 50,005
+PAGINATION_TEST_LAYER_PERIODS = 50005
+
 TEST_LAYERS = {
     'test_1': {
         'layer_id':
@@ -191,6 +195,33 @@ TEST_LAYERS = {
         'default':
         '2012-01-01',
         'periods': ['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(2000, 2250)]
+    },
+    'test_4': {
+        'layer_id':
+        'AMSR2_Snow_Water_Equivalent_pagination_test',
+        'layer_title':
+        'AMSR2 Snow Water Equivalent tileset for pagination testing',
+        'layer_name':
+        'Snow Water Equivalent (AMSR2, GCOM-W1) - Pagination Test',
+        'projection':
+        'EPSG:4326',
+        'tilematrixset':
+        '2km',
+        'mime_type':
+        'image/jpeg',
+        'static':
+        'false',
+        'abstract':
+        'AMSR2 Snow Water Equivalent abstract',
+        'metadata': [
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}',
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.0/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}',
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.2","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.2/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}',
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}'
+        ],
+        'default':
+        '2012-01-01',
+        'periods': ['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(0, PAGINATION_TEST_LAYER_PERIODS)]
     }
 }
 
@@ -318,6 +349,33 @@ class TestDateService(unittest.TestCase):
             f.write(layer_config)
 
         return layer_config_path
+
+    @classmethod
+    def get_describe_domains_threshold(self):
+        """
+        Parse the DESCRIBE_DOMAINS_THRESHOLD value from gc_service.lua.
+        Returns the threshold value as an integer, or None if not found.
+        """
+        gc_service_lua_path = os.path.join(
+            os.path.dirname(__file__), '..', 'modules', 'gc_service', 'gc_service.lua'
+        )
+        try:
+            with open(gc_service_lua_path, 'r') as f:
+                for line in f:
+                    # Look for: local DESCRIBE_DOMAINS_THRESHOLD = <number>
+                    if 'DESCRIBE_DOMAINS_THRESHOLD' in line and '=' in line:
+                        # Extract the number from the line
+                        parts = line.split('=')
+                        if len(parts) >= 2:
+                            value_str = parts[1].strip().rstrip(',')
+                            # Try to convert to int
+                            try:
+                                return int(value_str)
+                            except ValueError:
+                                continue
+        except FileNotFoundError:
+            pass
+        return None
 
     @classmethod
     def setup_date_service(self):
@@ -3862,7 +3920,244 @@ class TestDateService(unittest.TestCase):
             found, expected,
             'Incorrect maxy attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
             .format(expected, found, url))
-        
+
+    def test_describe_domains_pagination_last_page(self):
+        # Check that last page of DescribeDomains does NOT include NextPage element
+
+        apache_config = self.set_up_gc_service('test_describe_domains_pagination_last_page',
+                                               'EPSG:4326')
+
+        # Get the threshold from gc_service.lua
+        threshold = self.get_describe_domains_threshold()
+        if threshold is None:
+            self.skipTest('Could not determine DESCRIBE_DOMAINS_THRESHOLD from gc_service.lua')
+
+        # Create and write layer config
+        layer = TEST_LAYERS['test_4']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        # Download DD file with offset for last page (str(PAGINATION_TEST_LAYER_PERIODS) total periods - threshold)
+        total_periods = PAGINATION_TEST_LAYER_PERIODS
+        last_page_offset = total_periods - threshold
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&offset={2}'.format(
+            layer['layer_id'], layer['tilematrixset'], last_page_offset)
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading DescribeDomains file from url: {}.'.format(url))
+
+        # Parse the XML
+        try:
+            gc_dom = etree.fromstring(r.text.encode())
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get DimensionDomain element
+        dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+        self.assertNotEqual(
+            len(dim_domain_elems), 0,
+            'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+        dim_domain_elem = dim_domain_elems[0]
+
+        # Verify Size element still shows total count
+        size_elems = dim_domain_elem.findall('Size')
+        self.assertEqual(
+            size_elems[0].text, str(PAGINATION_TEST_LAYER_PERIODS),
+            '<Size> element should show total count. Url: {}'.format(url))
+
+        # Verify Domain contains last threshold periods
+        domain_elems = dim_domain_elem.findall('Domain')
+        periods = domain_elems[0].text.split(',') if domain_elems[0].text else []
+        self.assertEqual(
+            len(periods), threshold,
+            'Expected {} periods in last page, found {}. Url: {}'.format(threshold, len(periods), url))
+
+        # Verify NextPage element does NOT exist
+        next_page_elems = dim_domain_elem.findall('NextPage')
+        self.assertEqual(
+            len(next_page_elems), 0,
+            'Last page should NOT contain <NextPage> element. Url: {}'.format(url))
+
+    def test_describe_domains_pagination_offset_exceeds_size(self):
+        # Check that offset larger than total periods returns empty domain
+
+        apache_config = self.set_up_gc_service('test_describe_domains_pagination_offset_exceeds',
+                                               'EPSG:4326')
+
+        # Create and write layer config
+        layer = TEST_LAYERS['test_3']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        # Download DD file with offset=300 (exceeds total of 250)
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&offset=300'.format(
+            layer['layer_id'], layer['tilematrixset'])
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading DescribeDomains file from url: {}.'.format(url))
+
+        # Parse the XML
+        try:
+            gc_dom = etree.fromstring(r.text.encode())
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get DimensionDomain element
+        dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+        self.assertNotEqual(
+            len(dim_domain_elems), 0,
+            'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+        dim_domain_elem = dim_domain_elems[0]
+
+        # Verify Size element still shows total count
+        size_elems = dim_domain_elem.findall('Size')
+        self.assertEqual(
+            size_elems[0].text, str(PAGINATION_TEST_LAYER_PERIODS),
+            '<Size> element should show total count. Url: {}'.format(url))
+
+        # Verify Domain is empty or has no periods
+        domain_elems = dim_domain_elem.findall('Domain')
+        if domain_elems[0].text:
+            periods = domain_elems[0].text.split(',')
+            self.assertEqual(
+                len(periods), 0,
+                'Expected 0 periods when offset exceeds total, found {}. Url: {}'.format(len(periods), url))
+
+        # Verify NextPage element does NOT exist
+        next_page_elems = dim_domain_elem.findall('NextPage')
+        self.assertEqual(
+            len(next_page_elems), 0,
+            'Should NOT contain <NextPage> element when offset exceeds size. Url: {}'.format(url))
+
+    def test_describe_domains_pagination_complete_flow(self):
+        # Check that pagination works correctly across multiple pages
+
+        apache_config = self.set_up_gc_service('test_describe_domains_pagination_complete',
+                                               'EPSG:4326')
+
+        # Get the threshold from gc_service.lua
+        threshold = self.get_describe_domains_threshold()
+        if threshold is None:
+            self.skipTest('Could not determine DESCRIBE_DOMAINS_THRESHOLD from gc_service.lua')
+
+        # Create and write layer config (test_4 has PAGINATION_TEST_LAYER_PERIODS periods)
+        layer = TEST_LAYERS['test_4']
+        total_periods = PAGINATION_TEST_LAYER_PERIODS
+
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        all_periods = []
+        offset = 0
+        page_count = 0
+        max_pages = 3  # Test 3 pages (designed for ~25k threshold with PAGINATION_TEST_LAYER_PERIODS)
+
+        while page_count < max_pages:
+            # Download DD file with current offset
+            url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&offset={2}'.format(
+                layer['layer_id'], layer['tilematrixset'], offset)
+            r = requests.get(url)
+
+            self.assertEqual(
+                r.status_code, 200,
+                'Error downloading page {} from url: {}.'.format(page_count + 1, url))
+
+            # Parse the XML
+            try:
+                gc_dom = etree.fromstring(r.text.encode())
+            except etree.XMLSyntaxError as e:
+                self.fail(
+                    'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+            # Get DimensionDomain element
+            dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+            self.assertNotEqual(
+                len(dim_domain_elems), 0,
+                'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+            dim_domain_elem = dim_domain_elems[0]
+
+            # Get periods from this page
+            domain_elems = dim_domain_elem.findall('Domain')
+            if domain_elems[0].text:
+                periods = domain_elems[0].text.split(',')
+                all_periods.extend(periods)
+
+                # Each page should have threshold periods, except the last page
+                # For PAGINATION_TEST_LAYER_PERIODS with 25k threshold: page 1=25k, page 2=25k, page 3=5
+                expected_on_page = min(threshold, total_periods - offset)
+                self.assertEqual(
+                    len(periods), expected_on_page,
+                    'Expected {} periods on page {}, found {}. Url: {}'.format(
+                        expected_on_page, page_count + 1, len(periods), url))
+
+            # Check for NextPage
+            next_page_elems = dim_domain_elem.findall('NextPage')
+            if len(next_page_elems) > 0:
+                # Extract next offset from NextPage URL
+                next_page_url = next_page_elems[0].text
+                self.assertIn('offset=', next_page_url,
+                            'NextPage should contain offset parameter. Url: {}'.format(url))
+                # Parse offset value
+                offset_param = [p for p in next_page_url.split('&') if 'offset=' in p][0]
+                offset = int(offset_param.split('=')[1])
+            else:
+                # No more pages
+                break
+
+            page_count += 1
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        # Verify we collected the expected number of periods
+        # Should be max_pages * threshold (unless we hit the end of data)
+        expected_total = min(threshold * max_pages, total_periods)
+        self.assertEqual(
+            len(all_periods), expected_total,
+            'Expected {} periods total across up to {} pages, found {}'.format(
+                expected_total, max_pages, len(all_periods)))
+
+        # Verify no duplicate periods
+        self.assertEqual(
+            len(all_periods), len(set(all_periods)),
+            'Found duplicate periods in pagination')
+
     def test_gc_layer_filtering_single_layer(self):
         # Check that layer filtering returns only the requested layer
 
