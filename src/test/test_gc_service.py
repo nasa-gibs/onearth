@@ -4040,7 +4040,7 @@ class TestDateService(unittest.TestCase):
         # Verify Size element still shows total count
         size_elems = dim_domain_elem.findall('Size')
         self.assertEqual(
-            size_elems[0].text, str(PAGINATION_TEST_LAYER_PERIODS),
+            size_elems[0].text, 250,
             '<Size> element should show total count. Url: {}'.format(url))
 
         # Verify Domain is empty or has no periods
