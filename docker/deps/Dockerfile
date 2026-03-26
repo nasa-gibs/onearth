@@ -44,9 +44,9 @@ RUN wget https://go.dev/dl/go1.26.0.linux-amd64.tar.gz && \
     tar xf go1.26.0.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.43.tar.gz && \
-    tar xf v0.2.43.tar.gz && \
-    cd supercronic-0.2.43 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.44.tar.gz && \
+    tar xf v0.2.44.tar.gz && \
+    cd supercronic-0.2.44 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
