@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: onearth-import
+Version: 0.1.0
+Summary: CLI for importing MRF layers into a local OnEarth docker-compose stack
+Requires-Python: >=3.9
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: Pillow>=10.0

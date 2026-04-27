@@ -1230,24 +1230,38 @@ local function makeDD(endpointConfig, query_string)
             offset = tonumber(offset_param)
             if not offset or offset < 0 then
                 errorDom = makeExceptionReport("InvalidParameterValue",
-                        "OFFSET parameter must be a non-negative integer",
+                        "Offset parameter must be a non-negative integer",
                         "OFFSET", errorDom)
+                return xml_header .. xml.tostring(errorDom)
+            end
+        end
+
+        -- Parse and validate limit parameter 
+        local limit_param = get_query_param("limit", query_string)
+        -- NOTE ABOUT THE THRESHOLD - if you ever change this you need to consult worldview since they hardcode it for pagination
+        -- Users can override DESCRIBE_DOMAINS_THRESHOLD by passing a lower or higher limit 
+        local DESCRIBE_DOMAINS_THRESHOLD = 25000
+        local limit = DESCRIBE_DOMAINS_THRESHOLD
+        if limit_param then
+            limit = tonumber(limit_param)
+            if not limit or limit < 0 then
+                errorDom = makeExceptionReport("InvalidParameterValue",
+                        "Limit parameter must be a non-negative integer",
+                        "LIMIT", errorDom)
                 return xml_header .. xml.tostring(errorDom)
             end
         end
 
         -- Always pass limit to cap the number of periods returned
         -- The time service will still return the total count via periods_in_range
-        -- NOTE ABOUT THE THRESHOLD - if you ever change this you need to consult worldview since they hardcode it for pagination
-        local DESCRIBE_DOMAINS_THRESHOLD = 25000
-        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD, offset)
+        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, limit, offset)
         local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
         local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"
 
         -- Build the time domain node with proper NextPage logic
         local timeDomainNode
-        if tonumber(size) > DESCRIBE_DOMAINS_THRESHOLD then
-            local next_offset = offset + DESCRIBE_DOMAINS_THRESHOLD
+        if tonumber(size) > limit then
+            local next_offset = offset + limit
             if next_offset < tonumber(size) then
                 -- More pages exist - include NextPage element with full URL
                 local base_uri = endpointConfig["base_uri_gc"] or ""

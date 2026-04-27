@@ -1,0 +1,2 @@
+[console_scripts]
+onearth-import = onearth_import.cli:main
