@@ -28,6 +28,8 @@ import botocore.session
 from botocore.stub import Stubber
 import os
 import threading
+import json
+import re
 from oe_redis_utl import create_redis_client
 from periods import calculate_layer_periods
 from oe_best_redis import calculate_layer_best
@@ -153,30 +155,181 @@ def keyMapper(acc, obj):
 
     return acc
 
+def find_latest_inventory_folder(conn, bucket, inventory_prefix):
+    """
+    Find the most recent inventory date folder.
+
+    Args:
+        conn: S3 client connection
+        bucket: S3 bucket name
+        inventory_prefix: Path prefix to search for date folders
+
+    Returns:
+        str: Path to the latest inventory folder, or None if not found
+    """
+    kwargs = {'Bucket': bucket, 'Prefix': inventory_prefix, 'Delimiter': '/'}
+    try:
+        resp = conn.list_objects_v2(**kwargs)
+    except Exception as e:
+        print(f'Error listing inventory folders: {e}')
+        return None
+
+    if 'CommonPrefixes' not in resp:
+        print('No inventory date folders found')
+        return None
+
+    date_folders = []
+    # Pattern to match YYYY-MM-DD or YYYY-MM-DDTHH-MMZ format
+    date_pattern = re.compile(r'(\d{4}-\d{2}-\d{2})(T\d{2}-\d{2}Z)?')
+
+    for prefix_obj in resp['CommonPrefixes']:
+        prefix = prefix_obj['Prefix']
+        folder_name = prefix.rstrip('/').split('/')[-1]
+
+        # Check if folder name contains a date
+        match = date_pattern.search(folder_name)
+        if match:
+            try:
+                date_str = match.group(1)
+                timestamp_str = match.group(2)
+
+                # Parse with timestamp if present, otherwise just date
+                if timestamp_str:
+                    # Convert T00-00Z format to T00:00 for parsing
+                    timestamp_normalized = timestamp_str.replace('-', ':').rstrip('Z')
+                    full_datetime_str = date_str + timestamp_normalized
+                    parsed_date = datetime.strptime(full_datetime_str, '%Y-%m-%dT%H:%M')
+                else:
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d')
+
+                date_folders.append((parsed_date, prefix))
+                print(f'Found inventory date folder: {folder_name} ({parsed_date.isoformat()})')
+            except ValueError as e:
+                # Not a valid date, skip
+                print(f'Invalid date format for {folder_name}: {e}')
+                continue
+
+    if not date_folders:
+        print('No valid date folders found in inventory')
+        return None
+
+    # Get the most recent date folder
+    date_folders.sort(key=lambda x: x[0], reverse=True)
+    latest_date, latest_prefix = date_folders[0]
+    print(f'Using latest inventory from: {latest_prefix}')
+
+    return latest_prefix
+
+
+def read_manifest_csv_files(conn, bucket, manifest_key):
+    """
+    Download and parse manifest.json to get list of CSV file keys.
+
+    Args:
+        conn: S3 client connection
+        bucket: S3 bucket name
+        manifest_key: S3 key path to manifest.json
+
+    Returns:
+        list: List of CSV file keys, or None if error
+    """
+    try:
+        print(f'Downloading manifest: {manifest_key}')
+        conn.download_file(bucket, manifest_key, 'tmpManifest.json')
+    except Exception as e:
+        print(f'Error downloading manifest.json: {e}')
+        return None
+
+    try:
+        with open('tmpManifest.json', 'r') as f:
+            manifest = json.load(f)
+    except Exception as e:
+        print(f'Error reading manifest.json: {e}')
+        return None
+    finally:
+        # Clean up manifest file
+        if os.path.exists('tmpManifest.json'):
+            os.remove('tmpManifest.json')
+
+    if 'files' not in manifest:
+        print('No "files" array found in manifest.json')
+        return None
+
+    csv_files = [file_obj['key'] for file_obj in manifest['files']
+                 if file_obj['key'].endswith('.csv.gz')]
+    print(f'Found {len(csv_files)} CSV files in manifest')
+
+    return csv_files
+
+
+def process_csv_file(conn, bucket, csv_key):
+    """
+    Download and read a single CSV inventory file.
+
+    Args:
+        conn: S3 client connection
+        bucket: S3 bucket name
+        csv_key: S3 key path to CSV file
+
+    Returns:
+        list: List of keys from the CSV file, or empty list if error
+    """
+    tmp_file = f'tmpInventory_{os.path.basename(csv_key)}'
+    try:
+        print(f'Processing: {csv_key}')
+        conn.download_file(bucket, csv_key, tmp_file)
+
+        with gzip.open(tmp_file, mode='rt') as f:
+            reader = csv.reader(f)
+            keys = list(map(lambda x: x[1], reader))
+            print(keys)
+            print(f'  Added {len(keys)} keys from {os.path.basename(csv_key)}')
+            return keys
+    except Exception as e:
+        print(f'  Error processing {csv_key}: {e}')
+        return []
+    finally:
+        # Clean up temp file
+        if os.path.exists(tmp_file):
+            os.remove(tmp_file)
+
 
 def invenGetAllKeys(conn, bucket):
-    if (bucket == 'test-bucket'):
+    """
+    Get all S3 keys from inventory manifest.json and associated CSV files.
+
+    Args:
+        conn: S3 client connection
+        bucket: S3 bucket name
+
+    Returns:
+        list: Combined list of all keys from inventory CSV files, or False if error
+    """
+    if bucket == 'test-bucket':
         return False
-    if (bucket != 'test-inventory'):
-        keys = []
-        kwargs = {'Bucket': bucket, 'Prefix': 'inventory/'+bucket+'/entire/data/'}
-        respInv = conn.list_objects_v2(**kwargs)
+    if bucket != 'test-inventory':
+        # Find the latest inventory date folder
+        inventory_prefix = f'inventory/{bucket}/entire/'
+        print(f'Looking for manifest.json in {inventory_prefix}')
 
-        try:
-            objects = respInv['Contents']
-        except KeyError:
+        latest_prefix = find_latest_inventory_folder(conn, bucket, inventory_prefix)
+        if not latest_prefix:
             return False
-        print('Using S3 Inventory')
-        lastest_inventory = max(objects, key=lambda x: x['LastModified'])
-        if not lastest_inventory['Key'].endswith('csv.gz'):
-            print('S3 Inventory csv file not found!')
-            return False
-        conn.download_file(bucket, lastest_inventory['Key'], 'tmpInventory.csv.gz')
-    with gzip.open('tmpInventory.csv.gz', mode='rt') as f:
-        reader = csv.reader(f)
-        keys = list(map(lambda x: x[1], reader))
-    return keys
 
+        # Read manifest.json to get CSV file list
+        manifest_key = f'{latest_prefix}manifest.json'
+        csv_files = read_manifest_csv_files(conn, bucket, manifest_key)
+        if not csv_files:
+            return False
+
+        # Process all CSV files and combine keys
+        all_keys = []
+        for csv_key in csv_files:
+            keys = process_csv_file(conn, bucket, csv_key)
+            all_keys.extend(keys)
+
+        print(f'Total keys collected: {len(all_keys)}')
+        return all_keys
 
 def getAllKeys(conn, bucket):
     # https://alexwlchan.net/2017/07/listing-s3-keys/   

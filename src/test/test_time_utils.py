@@ -30,6 +30,10 @@ import shutil
 from oe_test_utils import restart_apache, make_dir_tree, mrfgen_run_command as run_command, seed_redis_data as seed_redis_data_oe_utils
 import datetime
 from dateutil.relativedelta import relativedelta
+import json
+import csv
+import gzip
+from unittest import mock
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'time_service'))
 from time_service import OnearthTimeService
 
@@ -312,6 +316,195 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[2], layer_res['periods'][0]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
+
+    def test_time_scrape_s3_inventory_with_mock_files(self):
+        """Test scraping S3 inventory using actual mock files written to disk with multiple projections"""
+        import boto3
+
+        # Setup test directory structure
+        test_bucket = 'test-inventory-mock'
+        test_dir = os.path.join(os.getcwd(), 'test_inventory_data')
+        inventory_base = os.path.join(test_dir, 'inventory', test_bucket, 'entire', '2024-04-27')
+        data_dir = os.path.join(inventory_base, 'data')
+
+        # Create directories
+        os.makedirs(data_dir, exist_ok=True)
+
+        try:
+            # Define test MRF files across multiple projections
+            # CSV 1: epsg4326 and epsg3857 data
+            csv1_keys = [
+                'epsg4326/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017001000000.ppg',
+                'epsg4326/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017002000000.ppg',
+                'epsg4326/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017003000000.ppg',
+                'epsg3857/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017001000000.ppg',
+                'epsg3857/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017002000000.ppg',
+                'epsg3857/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017003000000.ppg',
+            ]
+
+            # CSV 2: epsg3031, epsg3413, and more layers
+            csv2_keys = [
+                'epsg3031/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017001000000.ppg',
+                'epsg3031/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017002000000.ppg',
+                'epsg3031/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017003000000.ppg',
+                'epsg3413/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017001000000.ppg',
+                'epsg3413/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017002000000.ppg',
+                'epsg3413/Test_Inventory_Layer/2017/Test_Inventory_Layer-2017003000000.ppg',
+                'epsg4326/Another_Inventory_Layer/2017/Another_Inventory_Layer-2017005000000.ppg',
+                'epsg4326/Another_Inventory_Layer/2017/Another_Inventory_Layer-2017010000000.ppg',
+                'epsg3857/Another_Inventory_Layer/2017/Another_Inventory_Layer-2017005000000.ppg',
+                'epsg3857/Another_Inventory_Layer/2017/Another_Inventory_Layer-2017010000000.ppg',
+            ]
+
+            # Create CSV files with inventory data
+            csv_file1 = os.path.join(data_dir, 'inventory_part1.csv.gz')
+            csv_file2 = os.path.join(data_dir, 'inventory_part2.csv.gz')
+
+            # Write first CSV with epsg4326 and epsg3857 data
+            with gzip.open(csv_file1, 'wt', newline='') as f:
+                writer = csv.writer(f)
+                for key in csv1_keys:
+                    # CSV format: bucket, key, version_id, is_latest, is_delete_marker, size, last_modified_date, etag, storage_class
+                    writer.writerow([test_bucket, key, '', 'true', 'false', '5335951', '2017-01-10T00:00:00.000Z', '"abc123"', 'STANDARD'])
+
+            # Write second CSV with epsg3031, epsg3413 and additional layers
+            with gzip.open(csv_file2, 'wt', newline='') as f:
+                writer = csv.writer(f)
+                for key in csv2_keys:
+                    writer.writerow([test_bucket, key, '', 'true', 'false', '5335951', '2017-01-15T00:00:00.000Z', '"def456"', 'STANDARD'])
+
+            # Create manifest.json
+            manifest_file = os.path.join(inventory_base, 'manifest.json')
+            manifest_content = {
+                "sourceBucket": test_bucket,
+                "destinationBucket": f"arn:aws:s3:::inventory-bucket",
+                "version": "2016-11-30",
+                "creationTimestamp": "1493147200000",
+                "fileFormat": "CSV",
+                "fileSchema": "Bucket, Key, VersionId, IsLatest, IsDeleteMarker, Size, LastModifiedDate, ETag, StorageClass",
+                "files": [
+                    {"key": f"inventory/{test_bucket}/entire/2024-04-27/data/inventory_part1.csv.gz", "size": 1024},
+                    {"key": f"inventory/{test_bucket}/entire/2024-04-27/data/inventory_part2.csv.gz", "size": 1024}
+                ]
+            }
+
+            with open(manifest_file, 'w') as f:
+                json.dump(manifest_content, f)
+
+            # Mock S3 client
+            original_session = boto3.session.Session
+
+            def mock_session(*args, **kwargs):
+                session = original_session(*args, **kwargs)
+                original_client = session.client
+
+                def mock_client(service_name, **client_kwargs):
+                    if service_name == 's3':
+                        s3_client = original_client(service_name, **client_kwargs)
+
+                        # Mock list_objects_v2 to return inventory structure
+                        original_list = s3_client.list_objects_v2
+
+                        def mock_list_objects_v2(**kwargs):
+                            prefix = kwargs.get('Prefix', '')
+
+                            # Return date folders when searching for inventory
+                            if prefix == f'inventory/{test_bucket}/entire/' and kwargs.get('Delimiter') == '/':
+                                return {
+                                    'CommonPrefixes': [
+                                        {'Prefix': f'inventory/{test_bucket}/entire/2024-04-27/'}
+                                    ],
+                                    'ResponseMetadata': {'HTTPStatusCode': 200}
+                                }
+
+                            # Return empty for other queries
+                            return {
+                                'Contents': [],
+                                'IsTruncated': False,
+                                'ResponseMetadata': {'HTTPStatusCode': 200}
+                            }
+
+                        # Mock download_file to use our test files
+                        def mock_download_file(Bucket, Key, Filename):
+                            # Map the S3 key to our local test file
+                            if 'manifest.json' in Key:
+                                source = manifest_file
+                            elif 'inventory_part1.csv.gz' in Key:
+                                source = csv_file1
+                            elif 'inventory_part2.csv.gz' in Key:
+                                source = csv_file2
+                            else:
+                                raise FileNotFoundError(f"Mock file not found for key: {Key}")
+
+                            # Copy our test file to the expected location
+                            shutil.copy(source, Filename)
+
+                        s3_client.list_objects_v2 = mock_list_objects_v2
+                        s3_client.download_file = mock_download_file
+
+                        return s3_client
+                    return original_client(service_name, **client_kwargs)
+
+                session.client = mock_client
+                return session
+
+            # Expected results after scraping - define per projection
+            # All projections should have Test_Inventory_Layer with same dates (001, 002, 003)
+            # Only epsg4326 and epsg3857 should have Another_Inventory_Layer (005, 010)
+            test_projections = {
+                'epsg4326': [
+                    ('Test_Inventory_Layer', '2017-01-03', '2017-01-01/2017-01-03/P1D'),
+                    ('Another_Inventory_Layer', '2017-01-10', ['2017-01-05/2017-01-05/P1D', '2017-01-10/2017-01-10/P1D'])
+                ],
+                'epsg3857': [
+                    ('Test_Inventory_Layer', '2017-01-03', '2017-01-01/2017-01-03/P1D'),
+                    ('Another_Inventory_Layer', '2017-01-10', ['2017-01-05/2017-01-05/P1D', '2017-01-10/2017-01-10/P1D'])
+                ],
+                'epsg3031': [
+                    ('Test_Inventory_Layer', '2017-01-03', '2017-01-01/2017-01-03/P1D'),
+                ],
+                'epsg3413': [
+                    ('Test_Inventory_Layer', '2017-01-03', '2017-01-01/2017-01-03/P1D'),
+                ]
+            }
+
+            # Patch boto3 session and run the scrape command
+            with mock.patch('boto3.session.Session', side_effect=mock_session):
+                cmd = f"python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -b {test_bucket} 127.0.0.1"
+                run_command(cmd, True)
+
+            # Verify results in Redis for all projections
+            redis_server = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+            for projection, layers in test_projections.items():
+                print(f'\nVerifying projection: {projection}')
+
+                for layer_name, expected_default, expected_period in layers:
+                    print(f'  Checking layer: {layer_name}')
+
+                    # Directly verify in Redis that the dates exist
+                    dates_key = f'{projection}:layer:{layer_name}:dates'
+                    dates_in_redis = redis_server.zrange(dates_key, 0, -1)
+                    self.assertGreater(
+                        len(dates_in_redis), 0,
+                        f'No dates found in Redis for {dates_key}')
+
+                    print(f'    ✓ Found {len(dates_in_redis)} dates in Redis: {dates_key}')
+
+            # Cleanup Redis
+            if not DEBUG:
+                for projection, layers in test_projections.items():
+                    for layer_info in layers:
+                        remove_redis_layer(layer_info, [projection])
+
+        finally:
+            # Cleanup test files
+            if os.path.exists(test_dir):
+                shutil.rmtree(test_dir)
+            # Clean up any temp files created by oe_scrape_time
+            for tmp_file in ['tmpManifest.json'] + [f for f in os.listdir('.') if f.startswith('tmpInventory_')]:
+                if os.path.exists(tmp_file):
+                    os.remove(tmp_file)
 
     def test_time_config(self):
         # Test loading of time configs by endpoint
