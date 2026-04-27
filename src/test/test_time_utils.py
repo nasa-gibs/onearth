@@ -30,10 +30,6 @@ import shutil
 from oe_test_utils import restart_apache, make_dir_tree, mrfgen_run_command as run_command, seed_redis_data as seed_redis_data_oe_utils
 import datetime
 from dateutil.relativedelta import relativedelta
-import json
-import csv
-import gzip
-from unittest import mock
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'time_service'))
 from time_service import OnearthTimeService
 
