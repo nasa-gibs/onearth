@@ -330,6 +330,11 @@ def invenGetAllKeys(conn, bucket):
 
         print(f'Total keys collected: {len(all_keys)}')
         return all_keys
+    if bucket == 'test-inventory':
+        with gzip.open('tmpInventory.csv.gz', mode='rt') as f:
+            reader = csv.reader(f)
+            keys = list(map(lambda x: x[1], reader))
+        return keys
 
 def getAllKeys(conn, bucket):
     # https://alexwlchan.net/2017/07/listing-s3-keys/   
