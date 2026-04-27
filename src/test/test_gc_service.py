@@ -4458,6 +4458,180 @@ class TestDateService(unittest.TestCase):
             'Expected error message containing "{}", found "{}". Url: {}'.format(
                 expected_message, found_message, url))
 
+    def test_describe_domains_limit_first_date(self):
+        # Test that limit=1 with no offset returns only the first date
+
+        apache_config = self.set_up_gc_service('test_describe_domains_limit_first',
+                                               'EPSG:4326')
+
+        # Create and write layer config
+        layer = TEST_LAYERS['test_3']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        # Download DD file with limit=1
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&limit=1'.format(
+            layer['layer_id'], layer['tilematrixset'])
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading DescribeDomains file from url: {}.'.format(url))
+
+        # Parse the XML
+        try:
+            gc_dom = etree.fromstring(r.text.encode())
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get DimensionDomain element
+        dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+        self.assertNotEqual(
+            len(dim_domain_elems), 0,
+            'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+        dim_domain_elem = dim_domain_elems[0]
+
+        # Verify Domain contains only 1 period (the first one)
+        domain_elems = dim_domain_elem.findall('Domain')
+        periods = domain_elems[0].text.split(',') if domain_elems[0].text else []
+        self.assertEqual(
+            len(periods), 1,
+            'Expected 1 period with limit=1, found {}. Url: {}'.format(len(periods), url))
+
+        # Verify it's the first period from the layer
+        expected_first_period = layer['periods'][0]
+        self.assertEqual(
+            periods[0], expected_first_period,
+            'Expected first period "{}", found "{}". Url: {}'.format(expected_first_period, periods[0], url))
+
+    def test_describe_domains_limit_with_offset(self):
+        # Test that limit=5 with offset=5 returns dates 6-10
+
+        apache_config = self.set_up_gc_service('test_describe_domains_limit_offset',
+                                               'EPSG:4326')
+
+        # Create and write layer config
+        layer = TEST_LAYERS['test_3']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        # Download DD file with limit=5 and offset=5
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&limit=5&offset=5'.format(
+            layer['layer_id'], layer['tilematrixset'])
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading DescribeDomains file from url: {}.'.format(url))
+
+        # Parse the XML
+        try:
+            gc_dom = etree.fromstring(r.text.encode())
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get DimensionDomain element
+        dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+        self.assertNotEqual(
+            len(dim_domain_elems), 0,
+            'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+        dim_domain_elem = dim_domain_elems[0]
+
+        # Verify Domain contains exactly 5 periods
+        domain_elems = dim_domain_elem.findall('Domain')
+        periods = domain_elems[0].text.split(',') if domain_elems[0].text else []
+        self.assertEqual(
+            len(periods), 5,
+            'Expected 5 periods with limit=5, found {}. Url: {}'.format(len(periods), url))
+
+        # Verify these are periods at indices 5-9 (dates 6-10)
+        expected_periods = layer['periods'][5:10]
+        self.assertEqual(
+            periods, expected_periods,
+            'Expected periods {}, found {}. Url: {}'.format(expected_periods, periods, url))
+
+    def test_describe_domains_limit_large(self):
+        # Test that limit=50000 returns that many dates
+
+        apache_config = self.set_up_gc_service('test_describe_domains_limit_large',
+                                               'EPSG:4326')
+
+        # Create and write layer config using test_4 which has 50,005 periods
+        layer = TEST_LAYERS['test_4']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        # Download DD file with limit=50000
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&limit=50000'.format(
+            layer['layer_id'], layer['tilematrixset'])
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading DescribeDomains file from url: {}.'.format(url))
+
+        # Parse the XML
+        try:
+            gc_dom = etree.fromstring(r.text.encode())
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get DimensionDomain element
+        dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+        self.assertNotEqual(
+            len(dim_domain_elems), 0,
+            'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+        dim_domain_elem = dim_domain_elems[0]
+
+        # Verify Size element shows total count (50,005)
+        size_elems = dim_domain_elem.findall('Size')
+        self.assertEqual(
+            size_elems[0].text, str(PAGINATION_TEST_LAYER_PERIODS),
+            '<Size> element should show total count of {}. Url: {}'.format(PAGINATION_TEST_LAYER_PERIODS, url))
+
+        # Verify Domain contains exactly 50,000 periods
+        domain_elems = dim_domain_elem.findall('Domain')
+        periods = domain_elems[0].text.split(',') if domain_elems[0].text else []
+        self.assertEqual(
+            len(periods), 50000,
+            'Expected 50000 periods with limit=50000, found {}. Url: {}'.format(len(periods), url))
+
     @classmethod
     def tearDownClass(self):
         if not START_SERVER:
