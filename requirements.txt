@@ -2,7 +2,7 @@ protobuf==6.33.5
 wheel==0.46.2
 Fiona==1.10b3
 formencode==2.0.1
-lxml==5.3.0
+lxml==6.1.0
 mapbox-vector-tile==2.2.0
 matplotlib==3.10.3
 numpy==1.26.4
