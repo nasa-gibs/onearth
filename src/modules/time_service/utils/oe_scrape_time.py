@@ -282,7 +282,6 @@ def process_csv_file(conn, bucket, csv_key):
         with gzip.open(tmp_file, mode='rt') as f:
             reader = csv.reader(f)
             keys = list(map(lambda x: x[1], reader))
-            print(keys)
             print(f'  Added {len(keys)} keys from {os.path.basename(csv_key)}')
             return keys
     except Exception as e:
