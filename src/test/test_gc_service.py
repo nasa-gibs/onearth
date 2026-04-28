@@ -4592,7 +4592,7 @@ class TestDateService(unittest.TestCase):
             seed_redis_data([redis_info])
 
         # Download DD file with limit=50000
-        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&limit=50000'.format(
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&limit=25001'.format(
             layer['layer_id'], layer['tilematrixset'])
         r = requests.get(url)
 
@@ -4625,12 +4625,12 @@ class TestDateService(unittest.TestCase):
             size_elems[0].text, str(PAGINATION_TEST_LAYER_PERIODS),
             '<Size> element should show total count of {}. Url: {}'.format(PAGINATION_TEST_LAYER_PERIODS, url))
 
-        # Verify Domain contains exactly 50,000 periods
+        # Verify Domain contains exactly 25,001 periods
         domain_elems = dim_domain_elem.findall('Domain')
         periods = domain_elems[0].text.split(',') if domain_elems[0].text else []
         self.assertEqual(
-            len(periods), 50000,
-            'Expected 50000 periods with limit=50000, found {}. Url: {}'.format(len(periods), url))
+            len(periods), 25001,
+            'Expected 25001 periods with limit=25001, found {}. Url: {}'.format(len(periods), url))
 
     @classmethod
     def tearDownClass(self):
