@@ -657,17 +657,12 @@ def build_configs(endpoint_config):
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 
-    # Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
-    replace_with_local = None
-    if endpoint_config['reproject']['replace_with_local']:
-        replace_with_local = endpoint_config['reproject']['replace_with_local']
-        if 'https:' in replace_with_local:
-            set_local_addr(LOCAL_ADDR.replace('http:', 'https:'))
-        source_gc_uri = source_gc_uri.replace(replace_with_local, LOCAL_ADDR)
-    else:
-        print(
-            '\nNo "replace_with_local" configured.'
-        )
+    # Replace matching host names from the source_gc_uri with local Docker host IP 172.17.0.1 so that connections stay local
+    urlparsed = urlparse(source_gc_uri)
+    replace_with_local = f"{urlparsed.scheme}://{urlparsed.netloc}"
+    if 'https:' in replace_with_local:
+        set_local_addr(LOCAL_ADDR.replace('http:', 'https:'))
+    source_gc_uri = source_gc_uri.replace(replace_with_local, LOCAL_ADDR)
 
     # Get output TMS definitions (provided by local file)
     if not endpoint_config.get('tms_defs_file'):

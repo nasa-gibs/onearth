@@ -111,7 +111,6 @@ Service; keys will be positioned in the order configured
 * **reproject**: Configurations specific only to reproject (i.e., mod_reproject)
   * **target_epsg_code**: If a reproject endpoint, this is the target projection that source imagery will be reprojected to
   * **source_gc_uri**: If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint
-  * **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
 
 #### Layer Configuration
 
@@ -292,7 +291,6 @@ command line parameter.
 reprojected to. Note that this projection must have Tile Matrix Sets configured
 in the Tile Matrix Set definition file.
 - `source_gc_uri` (required) -- If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint.
-- `replace_with_local` (optional) -- Replace matching host names with local Docker host IP 172.17.0.1 (or custom server name, if different) so that connections stay local
 
 **wmts_service options**
 

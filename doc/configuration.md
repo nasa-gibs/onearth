@@ -164,7 +164,6 @@ Service; keys will be positioned in the order configured
 * **reproject**: Configurations specific only to reproject (i.e., mod_reproject)
   * **target_epsg_code**: If a reproject endpoint, this is the target projection that source imagery will be reprojected to
   * **source_gc_uri**: If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint
-  * **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
 
 Sample endpoint configuration:
 ```
@@ -203,7 +202,6 @@ mapserver:
 reproject:
   source_gc_uri: "http://localhost/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
   target_epsg_code: "EPSG:3857"
-  replace_with_local: "http://localhost"
 ```
 See [docker/sample_configs/endpoint](../docker/sample_configs/endpoint) for more samples.
 

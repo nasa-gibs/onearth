@@ -71,7 +71,7 @@ local function get_query_param(param, query_string, optional)
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
         if string.lower(query_pair[1]) == param then
-            if optional then 
+            if optional then
                 return query_pair[2] or ""
             else
                 return query_pair[2]
@@ -79,6 +79,39 @@ local function get_query_param(param, query_string, optional)
         end
     end
     return nil
+end
+
+local function build_next_page_link(base_uri, query_string, next_offset)
+    -- Build a full URL for the next page by updating/adding the offset parameter
+    if not query_string then
+        return base_uri .. "?offset=" .. next_offset
+    end
+
+    local params = {}
+    local has_offset = false
+    local query_parts = split("&", query_string)
+
+    for _, part in pairs(query_parts) do
+        local query_pair = split("=", part)
+        local key = query_pair[1]
+        local value = query_pair[2] or ""
+
+        if string.lower(key) == "offset" then
+            -- Replace existing offset with next_offset
+            params[#params + 1] = "offset=" .. tostring(next_offset)
+            has_offset = true
+        else
+            -- Keep other parameters as-is
+            params[#params + 1] = key .. "=" .. value
+        end
+    end
+
+    -- Add offset if it wasn't in the original query string
+    if not has_offset then
+        params[#params + 1] = "offset=" .. tostring(next_offset)
+    end
+
+    return base_uri .. "?" .. join(params, "&")
 end
     
 local function sendResponse(code, msg_string)
@@ -146,7 +179,7 @@ local function merge_time_service_results(t1, t2)
     return t1
 end
 
-local function getDateList(endpointConfig, layer, periods_start, periods_end, limit)
+local function getDateList(endpointConfig, layer, periods_start, periods_end, limit, offset)
     local dateServiceUri = endpointConfig["time_service_uri"]
     local dateServiceKeys = endpointConfig["time_service_keys"]
 
@@ -182,7 +215,8 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
     end
     local max_req_amt = 100
     local dateList = nil
-    local skip = 0
+    local skip = offset or 0
+    local first_iteration = true
     while not left_to_req or left_to_req > 0 do
         local requestUri = dateServiceUri
         local current_query_options = {}
@@ -233,7 +267,7 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
         end
 
         -- after the first request, determine how many more requests we need to perform
-        if not left_to_req or skip == 0 then
+        if not left_to_req or first_iteration then
             local max_to_req = 0
             for _, v in pairs(dateList) do
                 local periods_in_range = v["periods_in_range"] and tonumber(v["periods_in_range"]) or 0
@@ -243,12 +277,16 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
             if not left_to_req then
                 left_to_req = max_to_req
             -- when a limit is specified, we'll ensure that the limit is no greater than the maximum amount of periods
-            elseif skip == 0 then
-                left_to_req = math.min(max_to_req, left_to_req)
+            elseif first_iteration then
+                -- Cap left_to_req to avoid requesting more than what's available
+                -- Calculate remaining periods from current skip position (including what we just fetched)
+                local remaining_from_start = math.max(0, max_to_req - skip)
+                left_to_req = math.min(remaining_from_start, left_to_req)
             end
         end
         left_to_req = left_to_req - max_req_amt
         skip = skip + max_req_amt
+        first_iteration = false
     end
     return dateList
 end
@@ -1184,14 +1222,58 @@ local function makeDD(endpointConfig, query_string)
         if errorDom then
             return xml_header .. xml.tostring(errorDom)
         end
-        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, nil)
+
+        -- Parse and validate offset parameter
+        local offset_param = get_query_param("offset", query_string)
+        local offset = 0
+        if offset_param then
+            offset = tonumber(offset_param)
+            if not offset or offset < 0 then
+                errorDom = makeExceptionReport("InvalidParameterValue",
+                        "OFFSET parameter must be a non-negative integer",
+                        "OFFSET", errorDom)
+                return xml_header .. xml.tostring(errorDom)
+            end
+        end
+
+        -- Always pass limit to cap the number of periods returned
+        -- The time service will still return the total count via periods_in_range
+        -- NOTE ABOUT THE THRESHOLD - if you ever change this you need to consult worldview since they hardcode it for pagination
+        local DESCRIBE_DOMAINS_THRESHOLD = 25000
+        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, DESCRIBE_DOMAINS_THRESHOLD, offset)
         local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
         local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"
-        local timeDomainNode = xml.elem("DimensionDomain", {
-            xml.elem("ows:Identifier", "time"),
-            xml.elem("Domain", join(periodsList, ",")),
-            xml.elem("Size", "" .. size)
-        })
+
+        -- Build the time domain node with proper NextPage logic
+        local timeDomainNode
+        if tonumber(size) > DESCRIBE_DOMAINS_THRESHOLD then
+            local next_offset = offset + DESCRIBE_DOMAINS_THRESHOLD
+            if next_offset < tonumber(size) then
+                -- More pages exist - include NextPage element with full URL
+                local base_uri = endpointConfig["base_uri_gc"] or ""
+                local next_page_link = build_next_page_link(base_uri, query_string, next_offset)
+                timeDomainNode = xml.elem("DimensionDomain", {
+                    xml.elem("ows:Identifier", "time"),
+                    xml.elem("Domain", join(periodsList, ",")),
+                    xml.elem("Size", "" .. size),
+                    xml.elem("NextPage", next_page_link)
+                })
+            else
+                -- Last page - no NextPage element
+                timeDomainNode = xml.elem("DimensionDomain", {
+                    xml.elem("ows:Identifier", "time"),
+                    xml.elem("Domain", join(periodsList, ",")),
+                    xml.elem("Size", "" .. size)
+                })
+            end
+        else
+            -- Under threshold - no NextPage element
+            timeDomainNode = xml.elem("DimensionDomain", {
+                xml.elem("ows:Identifier", "time"),
+                xml.elem("Domain", join(periodsList, ",")),
+                xml.elem("Size", "" .. size)
+            })
+        end
         dom:add_direct_child(timeDomainNode)
     elseif errorDom then
         return xml_header .. xml.tostring(errorDom)

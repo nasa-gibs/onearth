@@ -452,11 +452,13 @@ static int handler(request_rec *r)
     }
 
     // This part is only for converting Zen JPEGs to JPNG, as needed
+    /* For now, return everything as PNG
     if (IMG_JPEG == params.raster.format && params.modified == 0) {
         // Zen mask absent or superfluous, just send the input
         apr_table_set(r->headers_out, "ETag", etagsrc);
         return sendImage(r, src, "image/jpeg");
     }
+    */
 
     // Space for the output image
     storage_manager dst(apr_palloc(r->pool, cfg->max_input_size), cfg->max_input_size);
@@ -475,8 +477,9 @@ static int handler(request_rec *r)
 
         // By default the NDV is zero, and the NVD field is zero
         // Check one more time that we had a Zen mask before turning the transparency on
-        if (params.modified)
-            out_params.has_transparency = true;
+        // For now, return everything with transparency enabled
+        // if (params.modified)
+        out_params.has_transparency = true;
 
         message = png_encode(out_params, raw, dst, png_palette, png_trans, num_trans);
         SERVER_ERR_IF(message != nullptr, r, "PNG encoding error: %s from %s", message, r->uri);
