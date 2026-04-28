@@ -62,7 +62,7 @@ RUN dnf remove -y python3-dateutil
 COPY requirements.txt .
 
 # Install pip dependencies
-RUN pip install pip==26.0.1
+RUN pip install pip==26.1
 RUN pip install -r requirements.txt
 
 # libspatialindex
