@@ -40,13 +40,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.26.1.linux-amd64.tar.gz && \
-    tar xf go1.26.1.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.26.2.linux-amd64.tar.gz && \
+    tar xf go1.26.2.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.44.tar.gz && \
-    tar xf v0.2.44.tar.gz && \
-    cd supercronic-0.2.44 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.45.tar.gz && \
+    tar xf v0.2.45.tar.gz && \
+    cd supercronic-0.2.45 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
@@ -146,7 +146,7 @@ RUN /usr/libexec/httpd-ssl-gencerts
 WORKDIR /home/oe2/onearth/src/modules/AHTSE/
 RUN bash bootstrap.bash
 
-RUN dnf remove -y cmake && \
+RUN dnf remove -y cmake kernel-headers && \
     dnf clean all
 
 WORKDIR /home/oe2
