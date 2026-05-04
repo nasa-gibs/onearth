@@ -146,7 +146,7 @@ RUN /usr/libexec/httpd-ssl-gencerts
 WORKDIR /home/oe2/onearth/src/modules/AHTSE/
 RUN bash bootstrap.bash
 
-RUN dnf remove -y cmake kernel-headers && \
+RUN dnf remove -y cmake && \
     dnf clean all
 
 WORKDIR /home/oe2
