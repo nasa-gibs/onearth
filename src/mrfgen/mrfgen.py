@@ -2341,12 +2341,15 @@ else:
         mrf_empty_tile_what = os.path.splitext(mrf_empty_tile_filename)[1]
         if mrf_empty_tile_what.startswith("."):
             mrf_empty_tile_what = mrf_empty_tile_what[1:]
+        mrf_empty_tile_what = str(mrf_empty_tile_what).lower()
     else:
-        mrf_empty_tile_what = mrf_empty_tile_type.extension
+        mrf_empty_tile_what = str(mrf_empty_tile_type.extension).lower()
     if (
         mrf_empty_tile_what != "png"
         and mrf_empty_tile_what != "brn"
         and mrf_empty_tile_what != "jpeg"
+        and mrf_empty_tile_what != "jpg"
+        and mrf_empty_tile_what != "tif"
         and mrf_empty_tile_what != "tiff"
         and mrf_empty_tile_what != "lrc"
         and mrf_empty_tile_what != "lerc"
