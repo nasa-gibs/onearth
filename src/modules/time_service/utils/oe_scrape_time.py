@@ -203,7 +203,6 @@ def find_latest_inventory_folder(conn, bucket, inventory_prefix):
                     parsed_date = datetime.strptime(date_str, '%Y-%m-%d')
 
                 date_folders.append((parsed_date, prefix))
-                print(f'Found inventory date folder: {folder_name} ({parsed_date.isoformat()})')
             except ValueError as e:
                 # Not a valid date, skip
                 print(f'Invalid date format for {folder_name}: {e}')
