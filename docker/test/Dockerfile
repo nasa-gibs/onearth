@@ -1,7 +1,7 @@
 # This Dockerfile must be run from source root
 FROM nasagibs/onearth-deps:2.9.7
 
-ARG MRF_VERSION=3.0.1
+ARG MRF_VERSION=3.0.3
 ARG ALMALINUX_VERSION=10
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
@@ -95,7 +95,6 @@ RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mr
     curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
     cd mrf/mrf_apps/ && \
     echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
-    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
     sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
     make && make install && \
     ldconfig && \
@@ -176,7 +175,7 @@ WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
 # pip updates
-RUN python3 -m pip install --user cython==3.1.2 
+RUN python3 -m pip install --user cython==3.1.2
 RUN python3 setup.py build_ext --inplace
 #Removed Shapely as it is already installed
 RUN python3 -m pip install moto[server]==4.2.7 werkzeug==3.0.1

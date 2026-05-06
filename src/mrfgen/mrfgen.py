@@ -79,11 +79,10 @@ import time
 import urllib.parse
 import xml.dom.minidom
 import shutil
-import imghdr
+import filetype
 import sqlite3
 import math
 import oe_utils
-import json
 import re
 from overtiffpacker import pack
 from decimal import *
@@ -2336,15 +2335,26 @@ else:
         log_sig_exit("ERROR", mssg, sigevent_url)
 
     # Verify that the empty tile image format is either PNG or JPEG.
-    mrf_empty_tile_what = imghdr.what(mrf_empty_tile_filename)
+    mrf_empty_tile_type = filetype.guess(mrf_empty_tile_filename)
+    # Use file extension as a backstop for exotic image formats (brunsli and lerc)
+    if not mrf_empty_tile_type:
+        mrf_empty_tile_what = os.path.splitext(mrf_empty_tile_filename)[1]
+        if mrf_empty_tile_what.startswith("."):
+            mrf_empty_tile_what = mrf_empty_tile_what[1:]
+        mrf_empty_tile_what = str(mrf_empty_tile_what).lower()
+    else:
+        mrf_empty_tile_what = str(mrf_empty_tile_type.extension).lower()
     if (
         mrf_empty_tile_what != "png"
+        and mrf_empty_tile_what != "brn"
         and mrf_empty_tile_what != "jpeg"
+        and mrf_empty_tile_what != "jpg"
+        and mrf_empty_tile_what != "tif"
         and mrf_empty_tile_what != "tiff"
         and mrf_empty_tile_what != "lrc"
         and mrf_empty_tile_what != "lerc"
     ):
-        mssg = "Empty tile image format must be either png, jpeg, tiff, or lrc (lerc)."
+        mssg = "Empty tile image format must be either png, jpeg, tiff, brn or lrc (lerc)."
         log_sig_exit("ERROR", mssg, sigevent_url)
 
     # Verify that the empty tile matches MRF compression type.
@@ -2358,6 +2368,11 @@ else:
         # Check the first 2 characters in case of JPG or JPEG.
         if mrf_compression_type.lower() not in ["jpeg", "jpg", "zen"]:
             mssg = "Empty tile format does not match MRF compression type."
+            log_sig_exit("ERROR", mssg, sigevent_url)
+
+    if mrf_empty_tile_what == "brn":
+        if not use_brunsli:
+            mssg = "Can only use a brunsli empty tile when mrf_brunsli is true"
             log_sig_exit("ERROR", mssg, sigevent_url)
 
     # Report empty tile size in bytes.
@@ -2518,7 +2533,7 @@ if mrf_compression_type.lower() in [
                 with rasterio.open(temp_tile, "w", **img_meta) as dst:
                     dst.write(composite_data)
                 log_info_mssg("just wrote the temp file")
-        
+
         # If we have a TIFF being converted to JPG, ensure that there are only 3 bands so that we don't end up with a CMYK JPG
         elif tile_extension.lower() in [".tif", ".tiff"] and mrf_compression_type.lower() in ["jpg", "jpeg"]:
             log_info_mssg("Ensuring that " + tile + " only has 3 bands")
@@ -2536,7 +2551,7 @@ if mrf_compression_type.lower() in [
                 log_info_mssg("Creating temp file " + temp_tile)
                 with rasterio.open(temp_tile, "w", **img_meta) as dst:
                     dst.write(img_data)
-        
+
         if temp_tile is not None:
             alltiles[i] = temp_tile
 
