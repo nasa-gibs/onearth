@@ -1,0 +1,37 @@
+diff --git a/src/apps/mapserv.c b/src/apps/mapserv.c
+index 1fadada5..d06f8df5 100644
+--- a/src/apps/mapserv.c
++++ b/src/apps/mapserv.c
+@@ -56,6 +56,10 @@
+ 
+ static int finish_process = 0;
+ 
++#if defined(USE_FASTCGI) && !defined(_WIN32)
++extern char **environ;
++#endif
++
+ #ifndef _WIN32
+ static void msCleanupOnSignal(int nInData) {
+   (void)nInData;
+@@ -270,6 +274,11 @@ int main(int argc, char *argv[]) {
+ 
+ #ifdef USE_FASTCGI
+   msIO_installFastCGIRedirect();
++#ifndef _WIN32
++  /* FCGI_Accept() points environ at the current request's params and frees
++   * them on its next call, including the one returning -1 on shutdown. */
++  char **startup_environ = environ;
++#endif
+ 
+   /* In FastCGI case we loop accepting multiple requests.  In normal CGI */
+   /* use we only accept and process one request.  */
+@@ -383,6 +392,9 @@ int main(int argc, char *argv[]) {
+     msResetErrorList();
+     continue;
+   } /* end fastcgi loop */
++#ifndef _WIN32
++  environ = startup_environ;
++#endif
+ #endif
+ 
+   /* normal case, processing is complete */

@@ -119,6 +119,8 @@ WORKDIR /tmp
 RUN wget http://download.osgeo.org/mapserver/mapserver-8.6.5.tar.gz && \
     tar xf mapserver-8.6.5.tar.gz
 WORKDIR /tmp/mapserver-8.6.5
+# Fixes segfault at fcgid process recycle: environ is left pointing at freed FastCGI params
+RUN patch -p1 < /home/oe2/onearth/docker/wms_service/mapserver_fcgi_environ.patch
 RUN mkdir build
 WORKDIR /tmp/mapserver-8.6.5/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
