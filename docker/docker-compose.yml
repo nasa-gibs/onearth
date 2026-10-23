@@ -130,6 +130,13 @@ services:
       SERVER_NAME: $SERVER_NAME
     volumes: 
       - ../certs:/home/oe2/onearth/certs
+    tmpfs:
+      - /run/httpd:size=16m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - oe2
     restart: always

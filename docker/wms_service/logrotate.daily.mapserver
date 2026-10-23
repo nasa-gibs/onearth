@@ -1,6 +1,10 @@
 /var/log/mapserver/error.log {
 	copytruncate
 	rotate 5
-	daily
+	hourly
+	maxsize 100M
+	missingok
+	notifempty
 	dateext
+	dateformat -%Y%m%d-%s
 }

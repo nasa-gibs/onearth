@@ -79,6 +79,39 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 
 See [OnEarth Configuration](../doc/configuration.md) for more information.
 
+### Production disk usage (EC2)
+
+Production ECS EC2 hosts already mount EFS at `/onearth` and bind-mount it into the WMS container at `/onearth`; no new volume is needed. Set this environment entry:
+
+```json
+"environment": [
+  {"name": "ONEARTH_LOG_ROOT", "value": "/onearth/logs/wms"}
+]
+```
+
+Each container writes under its own `<hostname>` subdirectory. In ECS bridge mode, the hostname is the short container ID, so each new task creates a new directory. A daily cleanup job at 03:17 removes inactive child directories carrying the `.onearth-wms-logs` marker according to `ONEARTH_LOG_RETENTION_DAYS` (default `7`), excluding the current container's directory. Keep `ONEARTH_LOG_ROOT` dedicated to WMS logs; unmarked directories are never pruned. For a direct Docker run using an EC2 host where EFS is mounted at `/onearth`:
+
+```sh
+docker run -v /onearth:/onearth -e ONEARTH_LOG_ROOT=/onearth/logs/wms \
+  --tmpfs /run/httpd:size=16m,mode=1777 \
+  --log-driver=json-file --log-opt max-size=50m --log-opt max-file=3 \
+  nasagibs/onearth-wms:latest
+```
+
+For ECS, use the same `environment` entry above and configure `/run/httpd` as tmpfs:
+
+```hcl
+linuxParameters = {
+  tmpfs = [{
+    containerPath = "/run/httpd"
+    size          = 16 # MiB
+    mountOptions  = ["mode=1777"]
+  }]
+}
+```
+
+The EFS path must be writable by `www-data`; startup warns and retains local logs if it is not. Unix sockets must stay on local storage (the `/run/httpd` tmpfs), not EFS/NFS. Production uses the `awslogs` driver, so container stdout/stderr is sent to CloudWatch rather than written to the host disk. Docker run users should set `--log-opt max-size=50m --log-opt max-file=3` or use `awslogs`.
+
 ### Test Layers
 
 `localhost/mrf_endpoint/static_test/default/tms/{level}/{row}/{col}.jpg` --

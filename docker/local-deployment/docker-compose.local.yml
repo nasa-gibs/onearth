@@ -164,6 +164,13 @@ services:
       - ${CONFIG_DIR:-./onearth-configs}/config:/etc/onearth/config
       - ${MRF_ARCHIVE_DIR:-./local-mrf-archive}:/onearth/mrf-archive:ro
       - ${SHP_ARCHIVE_DIR:-./local-shp-archive}:/onearth/shp-archive:ro
+    tmpfs:
+      - /run/httpd:size=16m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
     networks:
       - oe2
     restart: always
