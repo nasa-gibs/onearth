@@ -27,7 +27,7 @@ RUN dnf -y update && \
         mod_ssl-1:2.4.63-13.el10_2.1 \
         openssl-devel-1:3.5.8 \
         luarocks-3.9.2 \
-        valkey-compat-redis-8.0.9 \
+        valkey-compat-redis-8.0.11 \
         cronie-1.7.0 \
         logrotate-3.22.0 \
         python3-devel-3.12.13 \
@@ -40,13 +40,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.26.6.linux-amd64.tar.gz && \
-    tar xf go1.26.6.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.27.2.linux-amd64.tar.gz && \
+    tar xf go1.27.2.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.46.tar.gz && \
-    tar xf v0.2.46.tar.gz && \
-    cd supercronic-0.2.46 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.51.tar.gz && \
+    tar xf v0.2.51.tar.gz && \
+    cd supercronic-0.2.51 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
@@ -60,7 +60,7 @@ RUN GOBIN=/usr/local/bin/ go install github.com/mikefarah/yq/v4@master
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
-RUN cd client_golang@v1.23.2 && \
+RUN cd client_golang@v1.25.0 && \
     go mod tidy && \
     go clean -modcache && \
     cd /tmp/ && \
