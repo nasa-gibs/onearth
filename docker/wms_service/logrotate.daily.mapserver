@@ -8,3 +8,14 @@
 	dateext
 	dateformat -%Y%m%d-%s
 }
+
+/var/log/cron_jobs.log {
+	copytruncate
+	rotate 5
+	hourly
+	maxsize 100M
+	missingok
+	notifempty
+	dateext
+	dateformat -%Y%m%d-%s
+}

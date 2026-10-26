@@ -75,30 +75,26 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 * USE_LOCAL_SHAPEFILES: `true/false` (defaults `false`) whether to configure OnEarth to load shapefiles from `SHAPEFILE_BUCKET` (when `false`) or from `/onearth/shapefiles/` (when `true`) for WMS requests. Use of local files is generally much faster than reading from S3. Ignored when `SHAPEFILE_BUCKET` isn't specified.
 * ENDPOINT_REFRESH: Interval for refreshing the WMS endpoints in minutes
 * SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
+* MS_DEBUGLEVEL: MapServer debug level `0`-`5` (defaults `0`). Applied to the `Debug` line of every mapfile header in `/etc/onearth/config/mapserver/` and passed to mapserv.fcgi processes; invalid values fall back to `0`
+* CPL_DEBUG: `ON/OFF` (defaults `OFF`) GDAL debug output, passed to mapserv.fcgi processes and applied to `CONFIG "CPL_DEBUG"` lines in mapfile headers; invalid values fall back to `OFF`
+* PROJ_DEBUG: `ON/OFF` (defaults `OFF`) PROJ debug output, passed to mapserv.fcgi processes and applied to `CONFIG "PROJ_DEBUG"` lines in mapfile headers; invalid values fall back to `OFF`
 * HealthCheck: http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34
 
 See [OnEarth Configuration](../doc/configuration.md) for more information.
 
 ### Production disk usage (EC2)
 
-Production ECS EC2 hosts already mount EFS at `/onearth` and bind-mount it into the WMS container at `/onearth`; no new volume is needed. Set this environment entry:
+WMS logs stay on the container's local disk under `/var/log`, and rotation keeps them bounded. The MapServer error log and `/var/log/cron_jobs.log` rotate hourly, or within 10 minutes once they pass 100M, and 5 rotated files of each are kept. MapServer, GDAL and PROJ debug output is off by default (see `MS_DEBUGLEVEL`, `CPL_DEBUG` and `PROJ_DEBUG`). A cron job deletes files in `/tmp` older than 60 minutes.
 
-```json
-"environment": [
-  {"name": "ONEARTH_LOG_ROOT", "value": "/onearth/logs/wms"}
-]
-```
-
-Each container writes under its own `<hostname>` subdirectory. In ECS bridge mode, the hostname is the short container ID, so each new task creates a new directory. A daily cleanup job at 03:17 removes inactive child directories carrying the `.onearth-wms-logs` marker according to `ONEARTH_LOG_RETENTION_DAYS` (default `7`), excluding the current container's directory. Keep `ONEARTH_LOG_ROOT` dedicated to WMS logs; unmarked directories are never pruned. For a direct Docker run using an EC2 host where EFS is mounted at `/onearth`:
+Mount `/run/httpd` as tmpfs. It is the target of `/etc/httpd/run`, where Apache keeps its pid file and the mod_fcgid sockets, so on tmpfs those files never land on the host root disk. `mode=1777` is required. Without it, the tmpfs is created as `root:root` with the image's `710` mode, and Apache, which runs as `www-data`, can't write its pid file and won't start. Don't put the Unix sockets on EFS/NFS.
 
 ```sh
-docker run -v /onearth:/onearth -e ONEARTH_LOG_ROOT=/onearth/logs/wms \
-  --tmpfs /run/httpd:size=16m,mode=1777 \
+docker run --tmpfs /run/httpd:size=16m,mode=1777 \
   --log-driver=json-file --log-opt max-size=50m --log-opt max-file=3 \
   nasagibs/onearth-wms:latest
 ```
 
-For ECS, use the same `environment` entry above and configure `/run/httpd` as tmpfs:
+For ECS:
 
 ```hcl
 linuxParameters = {
@@ -110,7 +106,7 @@ linuxParameters = {
 }
 ```
 
-The EFS path must be writable by `www-data`; startup warns and retains local logs if it is not. Unix sockets must stay on local storage (the `/run/httpd` tmpfs), not EFS/NFS. Production uses the `awslogs` driver, so container stdout/stderr is sent to CloudWatch rather than written to the host disk. Docker run users should set `--log-opt max-size=50m --log-opt max-file=3` or use `awslogs`.
+Production uses the `awslogs` driver, so container stdout/stderr is sent to CloudWatch rather than written to the host disk. Docker run users should set `--log-opt max-size=50m --log-opt max-file=3` or use `awslogs`.
 
 ### Test Layers
 

@@ -8,47 +8,6 @@ SERVER_STATUS=${6:-false}
 USE_SSL=${7:-false}
 SERVER_NAME=${8:-localhost}
 
-log_root_warning() {
-  message="[$(date)] WARNING: $1"
-  echo "$message" >&2
-  echo "$message" >> /var/log/onearth/config.log
-}
-
-if [ -n "${ONEARTH_LOG_ROOT:-}" ]; then
-  LOG_DIR="$ONEARTH_LOG_ROOT/$(cat /proc/sys/kernel/hostname)"
-  if mkdir -p "$LOG_DIR/mapserver" "$LOG_DIR/onearth" "$LOG_DIR/httpd" && [ -w "$LOG_DIR" ]; then
-    LOG_ROOT_ACTIVE=true
-    touch "$LOG_DIR/.onearth-wms-logs"
-    for d in mapserver onearth httpd; do
-      if [ -L "/var/log/$d" ] && [ "$(readlink "/var/log/$d")" = "$LOG_DIR/$d" ]; then
-        continue
-      fi
-      if cp -an "/var/log/$d/." "$LOG_DIR/$d/"; then
-        if [ ! -w "$LOG_DIR/$d" ] || [ -n "$(find "$LOG_DIR/$d" -type f ! -writable 2>/dev/null | head -n 1)" ]; then
-          log_root_warning "$LOG_DIR/$d is not writable or contains files not writable by $(id -un); keeping local /var/log/$d"
-          continue
-        fi
-        if ! rm -rf "/var/log/$d" || ! ln -s "$LOG_DIR/$d" "/var/log/$d"; then
-          log_root_warning "Could not link /var/log/$d to $LOG_DIR/$d"
-        fi
-      else
-        log_root_warning "Could not copy /var/log/$d to $LOG_DIR/$d; keeping local logs"
-      fi
-    done
-    if touch "$LOG_DIR/cron_jobs.log" && [ -w "$LOG_DIR/cron_jobs.log" ]; then
-      if ln -sfn "$LOG_DIR/cron_jobs.log" /var/log/cron_jobs.log; then
-        echo "[$(date)] Logs are going to $LOG_DIR" >> /var/log/onearth/config.log
-      else
-        log_root_warning "Could not link /var/log/cron_jobs.log to $LOG_DIR/cron_jobs.log; keeping local /var/log/cron_jobs.log"
-      fi
-    else
-      log_root_warning "$LOG_DIR/cron_jobs.log is not writable by $(id -un); keeping local /var/log/cron_jobs.log"
-    fi
-  else
-    log_root_warning "ONEARTH_LOG_ROOT '$ONEARTH_LOG_ROOT' is not writable; keeping logs in /var/log"
-  fi
-fi
-
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
 
 if [ ! -f /.dockerenv ]; then
@@ -199,6 +158,17 @@ echo "[$(date)] Completed healthcheck wait" >> /var/log/onearth/config.log
 sh load_endpoints.sh
 
 # Set up cron job for refreshing endpoints
+# Drop WMS-managed jobs from previous starts so restarts don't duplicate cron entries
+crontab_base=$(mktemp)
+grep -vF \
+  -e '/home/oe2/onearth/docker/wms_service/' \
+  -e '/etc/cron.hourly/logrotate' \
+  -e '/etc/logrotate.d/mapserver' \
+  -e 'find /tmp -mindepth 1 -type f -mmin +60 -delete' \
+  /etc/crontab > "$crontab_base"
+cat "$crontab_base" > /etc/crontab
+rm -f "$crontab_base"
+
 if [ -z "$ENDPOINT_REFRESH" ]
 then
 	echo "ENDPOINT_REFRESH not set...using default of 60 minutes"
@@ -271,13 +241,8 @@ echo "5-55/10 * * * * /usr/sbin/logrotate -s /var/lib/logrotate/logrotate.status
 # Clean up temp files older than 60 minutes
 echo "*/30 * * * * find /tmp -mindepth 1 -type f -mmin +60 -delete" >> /etc/crontab
 
-# Remove log directories left on ONEARTH_LOG_ROOT by containers that no longer exist
-if [ "$LOG_ROOT_ACTIVE" = true ]; then
-  echo "17 3 * * * sh /home/oe2/onearth/docker/wms_service/cleanup_log_root.sh" >> /etc/crontab
-fi
-
 # Start cron
-supercronic -debug /etc/crontab > /var/log/cron_jobs.log 2>&1 &
+supercronic -debug /etc/crontab >> /var/log/cron_jobs.log 2>&1 &
 
 # Tail the logs
 exec tail -qFn 1000 \
