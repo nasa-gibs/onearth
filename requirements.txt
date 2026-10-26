@@ -5,14 +5,14 @@ lxml==6.1.0
 mapbox-vector-tile==2.2.0
 matplotlib==3.10.3
 numpy==1.26.4
-Pillow==12.3.0
+Pillow==13.0.0
 pyparsing==3.0.9
 pypng==0.20220715.0
 python-dateutil==2.8.1
 redis==6.2.0
 requests==2.33.0
 Rtree==1.0.1
-setuptools==83.0.0
+setuptools==84.2.1
 unittest-xml-reporting==3.2.0
 urllib3==2.7.0
 pyaml==21.10.1

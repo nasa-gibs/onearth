@@ -11,10 +11,10 @@ dependencies:
   # For building the Cython-based C extension
   - c-compiler
   - cython =3.1.2
-  - setuptools =83.0.0
+  - setuptools =84.2.1
   #
   # mrfgen dependencies
   - gdal =3.6.4
   - numpy =1.26.4
-  - pillow =12
+  - pillow =13
   - rasterio =1.3

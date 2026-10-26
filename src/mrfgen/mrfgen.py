@@ -113,7 +113,6 @@ import functools
 import random
 import numpy as np
 import rasterio
-from PIL import Image
 
 
 versionNumber = os.environ.get("ONEARTH_VERSION")
@@ -2545,23 +2544,19 @@ if mrf_compression_type.lower() in [
                 img_data = src.read()
                 img_meta = src.meta
 
-                # Convert the image data to a PIL image
                 # Assuming the image has 4 bands (RGBA)
-                img = Image.fromarray(img_data.transpose(1, 2, 0), mode="RGBA")
+                rgb = img_data[:3].astype(np.uint32)
+                alpha = img_data[3:4].astype(np.uint32)
 
-                # Create a new background image
-                if background == "white":
-                    bg = Image.new("RGBA", img.size, (255, 255, 255, 255))
-                elif background == "transparent":
-                    bg = Image.new("RGBA", img.size, (0, 0, 0, 0))
+                # Composite the input image onto the background
+                if background == "transparent":
+                    composite_data = np.where(alpha == 0, 0, img_data[:4]).astype(np.uint8)
                 else:
-                    bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
-
-                # Composite the input image onto the black background
-                composite = Image.alpha_composite(bg, img)
-
-                # Convert the composite image back to a numpy array
-                composite_data = np.array(composite).transpose(2, 0, 1)
+                    bg_value = 255 if background == "white" else 0
+                    composite_rgb = (rgb * alpha + bg_value * (255 - alpha) + 127) // 255
+                    composite_data = np.concatenate(
+                        [composite_rgb, np.full_like(alpha, 255)]
+                    ).astype(np.uint8)
 
                 # We no longer need the 4th band
                 if background != "transparent":

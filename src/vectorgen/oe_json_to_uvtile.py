@@ -40,7 +40,6 @@ import numpy as np
 import numpy.typing as npt
 from osgeo import gdal, osr
 from pathlib import Path
-from PIL import Image
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 from typing import Tuple, List, Dict, Union, Optional
@@ -349,8 +348,6 @@ def save_png(
         grid_info  (Dict[str, Union[float, int]]) -- Dictionary with grid dimensions
     """
     width, height = grid_info["width"], grid_info["height"]
-    img = Image.new("RGBA", (width, height))
-    img_data = img.load()
 
     u_range = value_ranges["u_max"] - value_ranges["u_min"]
     v_range = value_ranges["v_max"] - value_ranges["v_min"]
@@ -359,25 +356,25 @@ def save_png(
     grid_u = np.nan_to_num(grid_u, nan=value_ranges["u_min"])
     grid_v = np.nan_to_num(grid_v, nan=value_ranges["v_min"])
 
-    for y in range(height):
-        for x in range(width):
-            u_val = grid_u[y, x]
-            v_val = grid_v[y, x]
+    # Scale to 0-255
+    bands = [
+        (255 * (grid_u - value_ranges["u_min"]) / u_range).astype(np.uint8),
+        (255 * (grid_v - value_ranges["v_min"]) / v_range).astype(np.uint8),
+        np.zeros((height, width), dtype=np.uint8),
+        np.full((height, width), 255, dtype=np.uint8),
+    ]
 
-            # Scale to 0-255
-            r = int(255 * (u_val - value_ranges["u_min"]) / u_range)
-            g = int(255 * (v_val - value_ranges["v_min"]) / v_range)
-            b = 0
-            a = 255
-
-            img_data[x, y] = (r, g, b, a)
-
-    img.save(output_path, optimize=True, compress_level=9)
+    gdal.UseExceptions()
+    mem_ds = gdal.GetDriverByName("MEM").Create("", width, height, 4, gdal.GDT_Byte)
+    for i, band in enumerate(bands, start=1):
+        mem_ds.GetRasterBand(i).WriteArray(band)
+    gdal.GetDriverByName("PNG").CreateCopy(
+        str(output_path), mem_ds, options=["ZLEVEL=9"]
+    )
+    mem_ds = None
 
     # The world file is required for MRF generation.
     create_world_file(output_path, grid_info)
-
-    return img
 
 
 def save_geotiff(

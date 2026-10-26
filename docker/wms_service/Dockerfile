@@ -59,13 +59,6 @@ RUN make && make install
 COPY ./ /home/oe2/onearth/
 WORKDIR /home/oe2/onearth
 
-# Remove dependency that conflicts with older version in OnEarth requirements.txt
-RUN dnf remove -y python3-dateutil
-
-# Install pip dependencies
-RUN pip install pip==26.2
-RUN pip install -r requirements.txt
-
 # Install GDAL
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp

@@ -17,7 +17,7 @@ layer and URLs you can hit.
 
 ## Install
 
-Python 3.9+ and a Docker daemon are required. From this directory:
+Python 3.12+ and a Docker daemon are required. From this directory:
 
 ```bash
 pipx install .

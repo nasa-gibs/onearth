@@ -123,7 +123,7 @@ def compare_images(original_path, updated_path, diff_dir, ext):
             print("[DEBUG] Images are IDENTICAL")
         return "IDENTICAL"
     else:
-        diff_pixels = sum(1 for pixel in diff.getdata() if pixel[:3] != (0, 0, 0))
+        diff_pixels = sum(1 for pixel in diff.get_flattened_data() if pixel[:3] != (0, 0, 0))
         if DEBUG:
             print(f"[DEBUG] Pixel diff count: {diff_pixels}")
         diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}")
@@ -165,7 +165,7 @@ def compare_svg(original_path, updated_path, diff_dir):
         if bbox is None:
             image_result = "IDENTICAL (rendered image)"
         else:
-            diff_pixels = sum(1 for pixel in diff.getdata() if pixel[:3] != (0, 0, 0))
+            diff_pixels = sum(1 for pixel in diff.get_flattened_data() if pixel[:3] != (0, 0, 0))
             diff_path = os.path.join(diff_dir, f"diff_{os.path.basename(original_path)}.png")
             diff_img = diff.copy().convert('RGB')
             diff_img.save(diff_path)
