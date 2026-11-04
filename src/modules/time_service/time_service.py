@@ -29,6 +29,9 @@ class OnearthTimeService:
     DATETIME_FILENAME_FORMAT = '%Y%j%H%M%S'
     DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
     DATE_FORMAT = '%Y-%m-%d'
+
+    # Max layers per pipeline when getting all layers
+    LAYER_PIPELINE_CHUNK = 500
     
     def __init__(self):
         self.close_func = None
@@ -518,7 +521,8 @@ class OnearthTimeService:
             print("INFO: Scanning single Redis instance for layers")
             cursor = 0
             while True:
-                cursor, keys = client.scan(cursor, match=f"{prefix_string}layer:*")
+                # Larger batches than the default of 10 for fewer round trips
+                cursor, keys = client.scan(cursor, match=f"{prefix_string}layer:*", count=1000)
                 self._process_layer_keys(client, keys, prefix_string, periods_start,
                                         periods_end, layers)
                 if cursor == 0:
@@ -529,24 +533,47 @@ class OnearthTimeService:
     def _process_layer_keys(self, client, keys: List[str], prefix_string: str,
                            periods_start: Optional[str], periods_end: Optional[str],
                            layers: Dict) -> None:
-        """Process Redis keys and extract layer information."""
+        """Process Redis keys and extract layer information.
+
+        Each layer is read once, using pipelines, even though it has several keys.
+        """
+        # Get the layers not already read, from this or a previous batch
+        new_layers = []
         for key in keys:
             key_parts = key.split(":")
             if len(key_parts) >= 2:
                 layer_name = key_parts[-2]
                 if layer_name not in layers:
                     layers[layer_name] = {}
+                    new_layers.append(layer_name)
 
-                default = client.get(f"{prefix_string}layer:{layer_name}:default")
-                key_type = client.type(f"{prefix_string}layer:{layer_name}:periods")
+        for i in range(0, len(new_layers), self.LAYER_PIPELINE_CHUNK):
+            chunk = new_layers[i:i + self.LAYER_PIPELINE_CHUNK]
 
+            # Get defaults and periods key types, results are in the order queued
+            pipe = client.pipeline(transaction=False)
+            for layer_name in chunk:
+                pipe.get(f"{prefix_string}layer:{layer_name}:default")
+                pipe.type(f"{prefix_string}layer:{layer_name}:periods")
+            results = pipe.execute()
+            defaults, key_types = results[0::2], results[1::2]
+
+            # Get periods, the command depends on the key type. Layers without periods are skipped
+            pipe = client.pipeline(transaction=False)
+            for layer_name, key_type in zip(chunk, key_types):
+                if key_type == "zset":
+                    pipe.zrange(f"{prefix_string}layer:{layer_name}:periods", 0, -1)
+                elif key_type == "set":
+                    pipe.smembers(f"{prefix_string}layer:{layer_name}:periods")
+            period_results = iter(pipe.execute())
+
+            # Only layers that queued a periods read take a result
+            for layer_name, default, key_type in zip(chunk, defaults, key_types):
                 periods = []
                 if key_type == "zset":
-                    periods = client.zrange(f"{prefix_string}layer:{layer_name}:periods", 0, -1)
+                    periods = next(period_results)
                 elif key_type == "set":
-                    periods = list(client.smembers(f"{prefix_string}layer:{layer_name}:periods"))
-                    if periods:
-                        periods.sort()
+                    periods = sorted(next(period_results))
 
                 # Always include the layer, even if periods is empty
                 if periods_start or periods_end:
