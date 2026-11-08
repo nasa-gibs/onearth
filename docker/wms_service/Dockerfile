@@ -148,7 +148,7 @@ COPY docker/logrotate.daily.onearth /etc/logrotate.d/onearth
 # Setup cron for logrotate
 RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.hourly/ && \
     chmod 755 /etc/cron.hourly/logrotate && \
-    cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
+    cp /home/oe2/onearth/docker/wms_service/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
 RUN mkdir /onearth
 

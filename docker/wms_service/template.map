@@ -12,6 +12,7 @@ LAYER
                 ${style_info}
         END
         ${data_xml}
+        ${processing}
         PROJECTION
                 ${proj_params}
         END

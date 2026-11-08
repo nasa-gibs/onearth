@@ -1,0 +1,14 @@
+# WMS variant of docker/logrotate.hourly.httpd: copytruncate instead of a postrotate "httpd -k graceful".
+# Each graceful restart left old-generation httpd children deadlocked on exit (threads in futex_lock_pi) holding the
+# rotated log open, so logrotate's delete freed no space (df/du gap of several GB on the prod host), and it retired every
+# wms.cgi at once each hour. copytruncate needs no reopen; a few lines may be lost in the copy window.
+/var/log/httpd/*log {
+    hourly
+    rotate 1
+    maxage 1
+    missingok
+    notifempty
+    copytruncate
+    compress
+    delaycompress
+}

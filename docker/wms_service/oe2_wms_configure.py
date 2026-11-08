@@ -12,6 +12,12 @@ from pathlib import Path
 from decimal import Decimal
 
 MAPFILE_TEMPLATE = 'template.map'
+# Close GDAL_WMS datasets at the end of each request instead of MapServer's default DEFER, which keeps every dataset a
+# wms.cgi process ever opened alive until process exit (~4 MB RSS per distinct request) and then closes them all in
+# msCleanup(), where a GDAL debug lookup hits the freed FastCGI environment and segfaults. Reopening a TMS source is an
+# XML parse, no network round trip.
+RASTER_PROCESSING = 'PROCESSING "CLOSE_CONNECTION=NORMAL"'
+
 APACHE_CONFIG = '/etc/httpd/conf.d/oe2_wms.conf'
 APACHE_CONFIG_TEMPLATE = """<Directory {redirect_endpoint}>
         SetHandler fcgid-script
@@ -360,6 +366,7 @@ for layer in layers:
                                                                   ('${dimension_info}', ''),
                                                                   ('${style_info}', style_info),
                                                                   ('${data_xml}', 'DATA    \'{0}\''.format(data_file_uri)),
+                                                                  ('${processing}', ''),
                                                                   ('${proj_params}', PROJ_PARAMS[layer_proj]),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style),
@@ -422,6 +429,7 @@ for layer in layers:
                                                          ('${dimension_info}', dimension_info),
                                                          ('${style_info}', style_info),
                                                          ('${data_xml}', 'DATA    \'{0}\''.format(etree.tostring(out_root).decode())),
+                                                         ('${processing}', RASTER_PROCESSING),
                                                          ('${class_style}', ''),
                                                          ('${validation_info}', validation_info),
                                                          ('${proj_params}', PROJ_PARAMS[layer_proj]),

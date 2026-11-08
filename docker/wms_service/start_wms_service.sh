@@ -100,7 +100,10 @@ case "$PROJ_DEBUG" in
 esac
 echo "[$(date)] Using MS_DEBUGLEVEL=$MS_DEBUGLEVEL CPL_DEBUG=$CPL_DEBUG PROJ_DEBUG=$PROJ_DEBUG" >> /var/log/onearth/config.log
 
-# DEBUG and CONFIG "CPL_DEBUG"/"PROJ_DEBUG" lines in a mapfile override the environment, so apply the levels to the headers as well
+# DEBUG and CONFIG "CPL_DEBUG"/"PROJ_DEBUG" lines in a mapfile override the environment, so apply the levels to the headers as well.
+# The CONFIG lines must be present even when OFF: GDAL looks a key up in its own option table first and only falls back to
+# getenv(), and getenv() in wms.cgi after the last FCGI_Accept() reads the freed FastCGI environment (SIGSEGV in
+# GDALClose -> CPLDebug -> CPLGetConfigOption -> getenv at process exit). A table entry keeps CPLDebug out of getenv().
 for h in /etc/onearth/config/mapserver/*.header; do
   [ -f "$h" ] || continue
   sed -i -E \
@@ -109,6 +112,17 @@ for h in /etc/onearth/config/mapserver/*.header; do
     -e "s/^([[:space:]]*)CONFIG[[:space:]]+\"PROJ_DEBUG\"[[:space:]]+\"[^\"]*\"/\1CONFIG \"PROJ_DEBUG\" \"$PROJ_DEBUG\"/I" \
     "$h" \
     || echo "[$(date)] WARNING: could not set Debug level in $h" >> /var/log/onearth/config.log
+  for key in PROJ_DEBUG CPL_DEBUG; do
+    grep -qiE "^[[:space:]]*CONFIG[[:space:]]+\"$key\"" "$h" && continue
+    eval "value=\$$key"
+    if grep -qiE "^[[:space:]]*Debug[[:space:]]" "$h"; then
+      sed -i -E "0,/^[[:space:]]*[Dd][Ee][Bb][Uu][Gg][[:space:]]/{s/^([[:space:]]*)([Dd][Ee][Bb][Uu][Gg][[:space:]].*)$/\1\2\n\1CONFIG \"$key\" \"$value\"/}" "$h"
+    else
+      sed -i -E "0,/^[[:space:]]*MAP[[:space:]]*$/{s/^[[:space:]]*MAP[[:space:]]*$/MAP\n  CONFIG \"$key\" \"$value\"/}" "$h"
+    fi
+    grep -qiE "^[[:space:]]*CONFIG[[:space:]]+\"$key\"" "$h" \
+      || echo "[$(date)] WARNING: could not add CONFIG \"$key\" to $h" >> /var/log/onearth/config.log
+  done
 done
 
 # mapserv.fcgi processes don't inherit the container environment
@@ -228,6 +242,32 @@ fi
 # Remove stale mod_fcgid sockets left over from a previous run
 rm -f /etc/httpd/run/fcgidsock/*
 
+# mod_fcgid unlinks a socket when it reaps the process; sockets of processes it never reaped (killed process manager,
+# crashed httpd generation) stay behind and eventually exhaust inodes/space under /etc/httpd/run/fcgidsock.
+# Remove socket files nothing has bound any more (bound unix sockets are listed in /proc/net/unix).
+cat > /usr/local/bin/oe2_fcgid_sock_sweep.sh <<'EOS'
+#!/bin/sh
+d=/etc/httpd/run/fcgidsock
+[ -d "$d" ] || exit 0
+n=0
+for s in $(find "$d" -type s -mmin +10 2>/dev/null); do
+  grep -qF " $s" /proc/net/unix && continue
+  rm -f "$s" && n=$((n+1))
+done
+[ "$n" -gt 0 ] && echo "[$(date)] Removed $n stale mod_fcgid sockets" >> /var/log/onearth/config.log
+exit 0
+EOS
+chmod 755 /usr/local/bin/oe2_fcgid_sock_sweep.sh
+
+# wms.cgi exits with SIGSEGV when GDAL teardown touches the freed FastCGI environment
+# each core is 200-800 MB and a systemd-coredump run on the host, so cores are disabled for httpd and its children
+# (soft and hard limit) unless CORE_DUMPS=ON is set for debugging. The kernel still invokes a piped core_pattern
+# handler with RLIMIT_CORE=0, but it passes the limit as %c and systemd-coredump exits on a limit below one page
+# before reading the pipe ("Resource limits disable core dumping"), the same path as ProcessSizeMax=0.
+case "$CORE_DUMPS" in
+  [Oo][Nn]) echo "[$(date)] CORE_DUMPS=ON, core dumps left enabled" >> /var/log/onearth/config.log ;;
+  *) ulimit -c 0 || echo "[$(date)] WARNING: could not disable core dumps" >> /var/log/onearth/config.log ;;
+esac
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k start
 sleep 2
@@ -240,6 +280,9 @@ echo "5-55/10 * * * * /usr/sbin/logrotate -s /var/lib/logrotate/logrotate.status
 
 # Clean up temp files older than 60 minutes
 echo "*/30 * * * * find /tmp -mindepth 1 -type f -mmin +60 -delete" >> /etc/crontab
+
+# Remove mod_fcgid sockets no process has bound any more
+echo "*/10 * * * * /usr/local/bin/oe2_fcgid_sock_sweep.sh" >> /etc/crontab
 
 # Start cron
 supercronic -debug /etc/crontab >> /var/log/cron_jobs.log 2>&1 &

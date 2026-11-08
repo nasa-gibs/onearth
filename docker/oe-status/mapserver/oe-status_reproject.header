@@ -11,6 +11,8 @@ MAP
 
   CONFIG "MS_ERRORFILE" "/var/log/mapserver/error.log"
   Debug 0
+  CONFIG "CPL_DEBUG" "OFF"
+  CONFIG "PROJ_DEBUG" "OFF"
 
   OUTPUTFORMAT
     NAME            png

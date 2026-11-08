@@ -76,15 +76,16 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 * ENDPOINT_REFRESH: Interval for refreshing the WMS endpoints in minutes
 * SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
 * MS_DEBUGLEVEL: MapServer debug level `0`-`5` (defaults `0`). Applied to the `Debug` line of every mapfile header in `/etc/onearth/config/mapserver/` and passed to mapserv.fcgi processes; invalid values fall back to `0`
-* CPL_DEBUG: `ON/OFF` (defaults `OFF`) GDAL debug output, passed to mapserv.fcgi processes and applied to `CONFIG "CPL_DEBUG"` lines in mapfile headers; invalid values fall back to `OFF`
+* CPL_DEBUG: `ON/OFF` (defaults `OFF`) GDAL debug output, passed to mapserv.fcgi processes and applied to `CONFIG "CPL_DEBUG"` lines in mapfile headers (inserted when a header has none, so GDAL answers the lookup from its option table instead of `getenv()`, which crashes wms.cgi at process exit); invalid values fall back to `OFF`
 * PROJ_DEBUG: `ON/OFF` (defaults `OFF`) PROJ debug output, passed to mapserv.fcgi processes and applied to `CONFIG "PROJ_DEBUG"` lines in mapfile headers; invalid values fall back to `OFF`
+* CORE_DUMPS: `ON/OFF` (defaults `OFF`) core dumps for httpd and the wms.cgi processes it spawns; `OFF` sets the core size limit (soft and hard) to 0 before Apache starts so a crashing process leaves no core on the host
 * HealthCheck: http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34
 
 See [OnEarth Configuration](../doc/configuration.md) for more information.
 
 ### Production disk usage (EC2)
 
-WMS logs stay on the container's local disk under `/var/log`, and rotation keeps them bounded. The MapServer error log and `/var/log/cron_jobs.log` rotate hourly, or within 10 minutes once they pass 100M, and 5 rotated files of each are kept. MapServer, GDAL and PROJ debug output is off by default (see `MS_DEBUGLEVEL`, `CPL_DEBUG` and `PROJ_DEBUG`). A cron job deletes files in `/tmp` older than 60 minutes.
+WMS logs stay on the container's local disk under `/var/log`, and rotation keeps them bounded. The MapServer error log and `/var/log/cron_jobs.log` rotate hourly, or within 10 minutes once they pass 100M, and 5 rotated files of each are kept. MapServer, GDAL and PROJ debug output is off by default (see `MS_DEBUGLEVEL`, `CPL_DEBUG` and `PROJ_DEBUG`). The Apache logs under `/var/log/httpd` rotate hourly with `copytruncate` (no `httpd -k graceful`, which left old httpd children holding deleted logs open and retired every wms.cgi at once). A cron job deletes files in `/tmp` older than 60 minutes, and another removes mod_fcgid socket files under `/etc/httpd/run/fcgidsock` that no process has bound any more. Raster layers are generated with `PROCESSING "CLOSE_CONNECTION=NORMAL"` so GDAL_WMS datasets are closed after each request instead of being kept until process exit.
 
 Mount `/run/httpd` as tmpfs. It is the target of `/etc/httpd/run`, where Apache keeps its pid file and the mod_fcgid sockets, so on tmpfs those files never land on the host root disk. `mode=1777` is required. Without it, the tmpfs is created as `root:root` with the image's `710` mode, and Apache, which runs as `www-data`, can't write its pid file and won't start. Don't put the Unix sockets on EFS/NFS.
 
