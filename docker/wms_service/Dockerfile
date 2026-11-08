@@ -150,6 +150,10 @@ RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.hourly/ && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/wms_service/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
+# Sweep of mod_fcgid sockets nothing has bound (run from /etc/crontab by start_wms_service.sh)
+RUN cp /home/oe2/onearth/docker/wms_service/oe2_fcgid_sock_sweep.sh /usr/local/bin/ && \
+    chmod 755 /usr/local/bin/oe2_fcgid_sock_sweep.sh
+
 RUN mkdir /onearth
 
 # Add non-root user

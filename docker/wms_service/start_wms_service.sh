@@ -242,22 +242,8 @@ fi
 # Remove stale mod_fcgid sockets left over from a previous run
 rm -f /etc/httpd/run/fcgidsock/*
 
-# mod_fcgid unlinks a socket when it reaps the process; sockets of processes it never reaped (killed process manager,
-# crashed httpd generation) stay behind and eventually exhaust inodes/space under /etc/httpd/run/fcgidsock.
-# Remove socket files nothing has bound any more (bound unix sockets are listed in /proc/net/unix).
-cat > /usr/local/bin/oe2_fcgid_sock_sweep.sh <<'EOS'
-#!/bin/sh
-d=/etc/httpd/run/fcgidsock
-[ -d "$d" ] || exit 0
-n=0
-for s in $(find "$d" -type s -mmin +10 2>/dev/null); do
-  grep -qF " $s" /proc/net/unix && continue
-  rm -f "$s" && n=$((n+1))
-done
-[ "$n" -gt 0 ] && echo "[$(date)] Removed $n stale mod_fcgid sockets" >> /var/log/onearth/config.log
-exit 0
-EOS
-chmod 755 /usr/local/bin/oe2_fcgid_sock_sweep.sh
+# Stale mod_fcgid socket sweep: /usr/local/bin/oe2_fcgid_sock_sweep.sh (docker/wms_service/, copied in by the Dockerfile;
+# /usr/local/bin is root-owned and this script runs as www-data), scheduled in the crontab below.
 
 # wms.cgi exits with SIGSEGV when GDAL teardown touches the freed FastCGI environment
 # each core is 200-800 MB and a systemd-coredump run on the host, so cores are disabled for httpd and its children
