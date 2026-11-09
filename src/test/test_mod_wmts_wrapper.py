@@ -1942,6 +1942,23 @@ class TestModWmtsWrapper(unittest.TestCase):
             tile_url)
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
+    def test_zenjpeg_convert_png_tile_headers(self):
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_convert_mrf_date_yeardir/default/2012-02-22/2km/0/0/0.png'
+
+        response = get_url(tile_url)
+        headers = response.getheaders()
+
+        check_layer_headers(self, headers, 'test_zenjpeg_convert_mrf_date_yeardir', 'test_zenjpeg_convert_mrf_date_yeardir', '2012-02-22', '2012-02-22T00:00:00Z')
+
+    def test_zenjpeg_convert_jpeg_passthrough_tile_headers(self):
+        # Tile with no transparency is passed through as JPEG by mod_convert
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_convert_mrf_date_yeardir/default/2012-02-22/2km/2/1/1.png'
+
+        response = get_url(tile_url)
+        headers = response.getheaders()
+
+        check_layer_headers(self, headers, 'test_zenjpeg_convert_mrf_date_yeardir', 'test_zenjpeg_convert_mrf_date_yeardir', '2012-02-22', '2012-02-22T00:00:00Z')
+
     def test_brunsli_mrf_date_yeardir_tile_REST(self):
         tile_url = ('http://localhost/mod_wmts_wrapper_mrf'
                     '/test_brunsli_source_mrf_date_yeardir/default/2021-04-10'

@@ -364,6 +364,13 @@ static int handler(request_rec *r)
     int status = get_source_layername_from_date_service(r, wmts_cfg, layer_name, datetime_str, &prefix, &filename, &date_string);
     if (status != APR_SUCCESS) return status;
     const char *actual_layer_name = get_actual_layername_from_filename(r->pool, filename);
+
+    apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_name);
+    apr_table_set(r->headers_out, "Layer-Identifier-Actual", actual_layer_name);
+    apr_table_set(r->headers_out, "Layer-Time-Request", datetime_str ? datetime_str : "default");
+    apr_table_set(r->headers_out, "Layer-Time-Actual", date_string);
+    apr_table_set(r->headers_out, "Access-Control-Expose-Headers", "layer-identifier-request, layer-identifier-actual, layer-time-request, layer-time-actual");
+
     sub_uri = (char *)find_and_replace_string(r->pool, "${layer_src}", sub_uri, actual_layer_name);
     sub_uri = (char *)find_and_replace_string(r->pool, "${date}", sub_uri, datetime_str);
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "After replace %s", sub_uri);
