@@ -249,5 +249,8 @@ ENV ONEARTH_VERSION=2.10.1
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
 
+# Remove OpenSSH (not needed at runtime)
+RUN rpm -qa 'openssh*' | xargs -r rpm -e --nodeps
+
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh

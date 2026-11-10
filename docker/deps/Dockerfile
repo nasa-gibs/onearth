@@ -151,7 +151,8 @@ WORKDIR /home/oe2/onearth/src/modules/AHTSE/
 RUN bash bootstrap.bash
 
 RUN dnf remove -y cmake && \
-    dnf clean all
+    dnf clean all && \
+    rpm -qa 'openssh*' | xargs -r rpm -e --nodeps
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth /tmp/*

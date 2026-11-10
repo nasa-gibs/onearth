@@ -166,7 +166,8 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
 # Remove unneeded packages
 RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
     dnf autoremove -y && \
-    dnf clean all
+    dnf clean all && \
+    rpm -qa 'openssh*' | xargs -r rpm -e --nodeps
 RUN pip uninstall -y pip
 RUN rm -rf /tmp/*
 
